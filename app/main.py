@@ -59,7 +59,7 @@ def move():
     directions = ['up', 'down', 'left', 'right']
     direction = random.choice(directions)
 
-    return move_response(direction)
+    return move_response('right')
 
 
 @bottle.post('/end')
