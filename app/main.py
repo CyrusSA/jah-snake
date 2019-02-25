@@ -2,8 +2,11 @@ import json
 import os
 import random
 import bottle
+from game import Game
 
 from api import ping_response, start_response, move_response, end_response
+
+game = ""
 
 @bottle.route('/')
 def index():
@@ -39,8 +42,8 @@ def start():
             initialize your snake state here using the
             request's data if necessary.
     """
-    print(json.dumps(data))
-
+    global game
+    game = Game(data)
     color = "#00FF00"
 
     return start_response(color)
@@ -55,6 +58,9 @@ def move():
             snake AI must choose a direction to move in.
     """
     print(json.dumps(data))
+
+    global game
+    game.update_game(data)
 
     directions = ['up', 'down', 'left', 'right']
     direction = random.choice(directions)
