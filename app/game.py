@@ -22,9 +22,10 @@ class Game:
         self.foods = [Node(food["x"], food["y"]) for food in game_data["board"]["food"]]
 
     def update_snakes(self, game_data):
-        self.snakes = [Node(me["x"], me["y"]) for me in game_data["you"]["body"][1:-1]]
         for snake in game_data["board"]["snakes"]:
-            self.snakes.extend([Node(point["x"], point["y"]) for point in snake["body"]])
+            self.snakes = [Node(point["x"], point["y"]) for point in snake["body"]]
+        self.snakes.remove(Node(game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"]))
+        self.snakes.remove(Node(game_data["you"]["body"][-1]["x"], game_data["you"]["body"][-1]["y"]))
 
     def update_board(self):
         self.board = nx.Graph()
