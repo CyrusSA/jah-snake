@@ -1,4 +1,5 @@
 import json
+import logging.Logger as Logger
 from bottle import HTTPResponse
 
 def ping_response():
@@ -23,6 +24,8 @@ def start_response(color):
 def move_response(move):
     assert move in ['up', 'down', 'left', 'right'], \
         "Move must be one of [up, down, left, right]"
+
+    Logger.info(move)
 
     return HTTPResponse(
         status=200,
