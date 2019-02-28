@@ -60,6 +60,9 @@ def move():
     print(json.dumps(data))
 
     global game
+
+    if isinstance(game, basestring):
+        game = Game(data)
     game.update_game(data)
 
     directions = ['up', 'down', 'left', 'right']
