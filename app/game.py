@@ -63,8 +63,8 @@ class Game:
     def get_direction(self, destination):
         if self.head[0] == destination[0]:
             if self.head[1] > destination[1]:
-                return 'down'
-            return 'up'
+                return 'up'
+            return 'down'
         if self.head[0] > destination[0]:
             return 'left'
         return 'right'
