@@ -4,7 +4,6 @@ from collections import OrderedDict
 
 class Game:
     def __init__(self, game_data):
-        print "hello"
         self.board_height = game_data['board']['height']
         self.board_width = game_data['board']['width']
         self.health = 100
@@ -13,6 +12,7 @@ class Game:
         self.board = ""
         self.foods = []
         self.snakes = []
+        self.my_length = 0
 
     def update_game(self, game_data):
         self.head = (game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"])
@@ -57,8 +57,18 @@ class Game:
     def get_move(self):
         if self.my_length == 1:
             return 'up'
-        destination = nx.shortest_path(self.board, self.head, self.tail)[1]
+        if self.health < 50:
+            destination = self.get_food_destination()
+        else:
+            destination = nx.shortest_path(self.board, self.head, self.tail)[1]
         return self.get_direction(destination)
+
+    def get_food_destination(self):
+        shortest_food_path = [i for i in range(1000)]
+        for food_path in [nx.shortest_path(self.board, self.head, food) for food in self.foods]:
+            if len(food_path) < len(shortest_food_path):
+                shortest_food_path = food_path
+        return shortest_food_path[1]
 
     def get_direction(self, destination):
         if self.head[0] == destination[0]:
