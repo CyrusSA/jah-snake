@@ -57,7 +57,7 @@ class Game:
     def get_move(self):
         if self.my_length == 1:
             return 'up'
-        if self.health < 50:
+        if self.health < 70:
             destination = self.get_food_destination()
         else:
             destination = nx.shortest_path(self.board, self.head, self.tail)[1]
