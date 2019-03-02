@@ -13,14 +13,10 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 90
+        self.health_threshold = 75
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
-        if game_data["turn"] < 40:
-            self.health_threshold = 90
-        else:
-            self.health_threshold = 60
         self.head = (game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"])
         self.tail = (game_data["you"]["body"][-1]["x"], game_data["you"]["body"][-1]["y"])
         self.my_length = self.get_my_length(game_data["you"]["body"])
