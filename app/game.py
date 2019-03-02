@@ -36,6 +36,12 @@ class Game:
         for snake in game_data["board"]["snakes"]:
             # Add all snakes except me to self.snakes
             self.snakes = [(point["x"], point["y"]) for point in snake["body"] if snake["id"] != game_data["you"]["id"]]
+            if snake["id"] != game_data["you"]["id"]:
+                x = snake["body"][0]["x"]
+                y = snake["body"][0]["y"]
+                for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
+                    if node not in self.snakes:
+                        self.snakes.append(node)
         if game_data["turn"] == 0 or game_data["turn"] == 1:
             return
         else:
