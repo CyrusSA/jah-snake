@@ -13,10 +13,14 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 70
+        self.health_threshold = 90
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
+        if game_data["turn"] < 40:
+            self.health_threshold = 90
+        else:
+            self.health_threshold = 60
         self.head = (game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"])
         self.tail = (game_data["you"]["body"][-1]["x"], game_data["you"]["body"][-1]["y"])
         self.my_length = self.get_my_length(game_data["you"]["body"])
@@ -69,12 +73,22 @@ class Game:
         if self.my_length == 1:
             return 'up'
         if self.health < self.health_threshold:
-            destination = self.get_food_destination()
+            try:
+                destination = self.get_food_destination()
+            except nx.NetworkXNoPath:
+                if not self.board.has_node(self.tail):
+                    self.board.add_node(self.tail)
+                    self.add_edges(self.tail)
+                destination = nx.shortest_path(self.board, self.head, self.tail)[1]
         else:
             if not self.board.has_node(self.tail):
                 self.board.add_node(self.tail)
                 self.add_edges(self.tail)
-            destination = nx.shortest_path(self.board, self.head, self.tail)[1]
+            shortest_path = nx.shortest_path(self.board, self.head, self.tail)
+            destination = shortest_path[1]
+            # if self.health == 100 and len(shortest_path) == 2:
+            #     x = self.head[0]
+            #     y = self.tail[1]
         return self.get_direction(destination)
 
     # Gets destination of closest food item

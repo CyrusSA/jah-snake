@@ -48,7 +48,7 @@ def start():
     headType = "dead"
     tailType = "hook"
 
-    return start_response(color)
+    return start_response(color, headType, tailType)
 
 
 @bottle.post('/move')
