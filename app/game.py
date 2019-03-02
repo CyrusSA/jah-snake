@@ -71,6 +71,9 @@ class Game:
         if self.health < self.health_threshold:
             destination = self.get_food_destination()
         else:
+            if not self.board.has_node(self.tail):
+                self.board.add_node(self.tail)
+                self.add_edges(self.tail)
             destination = nx.shortest_path(self.board, self.head, self.tail)[1]
         return self.get_direction(destination)
 
