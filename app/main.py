@@ -63,12 +63,10 @@ def move():
 
     global game
 
-    if isinstance(game, basestring):
+    if isinstance(game, str):
         game = Game(data)
-    game.update_game(data)
 
-    directions = ['up', 'down', 'left', 'right']
-    direction = random.choice(directions)
+    game.update_game(data)
 
     return move_response(game.get_move())
 

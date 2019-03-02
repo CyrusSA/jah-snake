@@ -21,7 +21,8 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 75
+        self.my_body = []
+        self.health_threshold = 70
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -32,6 +33,7 @@ class Game:
         self.update_snakes(game_data)
         self.update_board()
         self.health = game_data["you"]["health"]
+        self.my_body = [(point["x"], point["y"]) for point in game_data["you"]["body"]]
 
     # Populate self.snakes with snake data.
     # If turn 0, don't add any of me
@@ -54,10 +56,15 @@ class Game:
     # Creates and populates graph of board points. Does not add a point if it houses a snake.
     def update_board(self):
         self.board = nx.Graph()
+        dont_add = []
         for y in range(self.board_height):
             for x in range(self.board_width):
                 current_node = (x, y)
                 if current_node in self.snakes:
+                    dont_add.append(current_node)
+                    if current_node not in self.my_body:
+                        dont_add.extend([(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)])
+                if current_node in dont_add:
                     continue
                 self.board.add_node(current_node)
                 self.add_edges(current_node)
