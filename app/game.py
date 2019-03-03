@@ -1,5 +1,6 @@
 import networkx as nx
 from collections import OrderedDict
+import random
 
 
 class Game:
@@ -72,26 +73,29 @@ class Game:
     # Else if turn 0, return default move
     # Else move towards tail
     def get_move(self):
-        if self.my_length == 1:
-            return 'up'
-        if self.health < self.health_threshold:
-            try:
-                destination = self.get_food_destination()
-            except nx.NetworkXNoPath:
+        try:
+            if self.my_length == 1:
+                return 'up'
+            if self.health < self.health_threshold:
+                try:
+                    destination = self.get_food_destination()
+                except nx.NetworkXNoPath:
+                    if not self.board.has_node(self.tail):
+                        self.board.add_node(self.tail)
+                        self.add_edges(self.tail)
+                    destination = nx.shortest_path(self.board, self.head, self.tail)[1]
+            else:
                 if not self.board.has_node(self.tail):
                     self.board.add_node(self.tail)
                     self.add_edges(self.tail)
-                destination = nx.shortest_path(self.board, self.head, self.tail)[1]
-        else:
-            if not self.board.has_node(self.tail):
-                self.board.add_node(self.tail)
-                self.add_edges(self.tail)
-            shortest_path = nx.shortest_path(self.board, self.head, self.tail)
-            destination = shortest_path[1]
-            # if self.health == 100 and len(shortest_path) == 2:
-            #     x = self.head[0]
-            #     y = self.tail[1]
-        return self.get_direction(destination)
+                shortest_path = nx.shortest_path(self.board, self.head, self.tail)
+                destination = shortest_path[1]
+                # if self.health == 100 and len(shortest_path) == 2:
+                #     x = self.head[0]
+                #     y = self.tail[1]
+            return self.get_direction(destination)
+        except nx.NodeNotFound:
+            return self.get_direction(random.choice(self.board.nodes()))
 
     # Gets destination of closest food item
     def get_food_destination(self):
