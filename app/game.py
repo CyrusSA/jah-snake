@@ -102,6 +102,10 @@ class Game:
         shortest_food_path = [i for i in range(1000)]
         for food_path in [nx.shortest_path(self.board, self.head, food) for food in self.foods]:
             if len(food_path) < len(shortest_food_path):
+                try:
+                    nx.shortest_path(self.board, food_path[-1], self.tail)
+                except nx.NetworkXNoPath:
+                    continue
                 shortest_food_path = food_path
         return shortest_food_path[1]
 
