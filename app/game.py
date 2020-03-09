@@ -2,6 +2,13 @@ import networkx as nx
 from collections import OrderedDict
 import random
 
+'''To-do
+- Account for growth after eating
+- debug
+- Dont go for food unless path to tail
+- Dont go for food if enemy can get there first unless low health or longer than enemy by a margin
+- Chase enemy tail sometime
+'''
 
 class Game:
     def __init__(self, game_data):
@@ -85,17 +92,12 @@ class Game:
                 except nx.NetworkXNoPath:
                     pass
 
-            if not self.board.has_node(self.tail):
-                self.board.add_node(self.tail)
-                self.add_edges(self.tail)
             shortest_path = nx.shortest_path(self.board, self.head, self.tail)
             destination = shortest_path[1]
-            # if self.health == 100 and len(shortest_path) == 2:
-            #     x = self.head[0]
-            #     y = self.tail[1]
             return self.get_direction(destination)
         except nx.NodeNotFound:
-            return self.get_direction(random.choice(self.board.nodes()))
+            print("NO OPTIONS RANDOM DIRECTION - OR JUST ATE FOOD")
+            return self.get_direction(random.choice(list(self.board)))
 
     # Gets destination of closest food item
     def get_food_destination(self):
