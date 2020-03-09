@@ -3,11 +3,12 @@ from collections import OrderedDict
 import random
 
 '''To-do
-- Account for growth after eating
+- Account for growth after eating - DONE ish
 - debug
-- Dont go for food unless path to tail
+- Dont go for food unless path to tail - DONE
 - Dont go for food if enemy can get there first unless low health or longer than enemy by a margin
 - Chase enemy tail sometime
+- Be aggressive with food early on?
 '''
 
 class Game:
@@ -28,13 +29,15 @@ class Game:
         self.head = (game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"])
         self.tail = (game_data["you"]["body"][-1]["x"], game_data["you"]["body"][-1]["y"])
         self.my_length = self.get_my_length(game_data["you"]["body"])
+        self.health = game_data["you"]["health"]
+        self.just_ate = self.health == 100 and game_data["turn"] != 0
         self.foods = [(food["x"], food["y"]) for food in game_data["board"]["food"]]
         self.update_snakes(game_data)
         self.update_board()
-        self.health = game_data["you"]["health"]
 
     # Populate self.snakes with snake data.
     # If turn 0, don't add any of me
+    # If just ate, don't add tail
     # Else don't add my head and tail
     def update_snakes(self, game_data):
         self.snakes = []
@@ -49,8 +52,7 @@ class Game:
                         self.snakes.append(node)
         if game_data["turn"] == 0 or game_data["turn"] == 1:
             return
-        else:
-            self.snakes.extend([(point["x"], point["y"]) for point in game_data["you"]["body"][1:-1]])
+        self.snakes.extend([(point["x"], point["y"]) for point in game_data["you"]["body"][1:(-2 if self.just_ate else -1)]])
 
     # Creates and populates graph of board points. Does not add a point if it houses a snake.
     def update_board(self):
@@ -94,9 +96,19 @@ class Game:
 
             shortest_path = nx.shortest_path(self.board, self.head, self.tail)
             destination = shortest_path[1]
+
+            # Two body points stacked at tail, don't follow closely
+            if self.just_ate and destination == self.tail:
+                for path in nx.all_simple_paths(self.board, self.head, self.tail, 4):
+                    if len(path) > 3:
+                        destination = path[1]
+                        break
+                if destination == self.tail:
+                    print("No alternate paths")
+
             return self.get_direction(destination)
         except nx.NodeNotFound:
-            print("NO OPTIONS RANDOM DIRECTION - OR JUST ATE FOOD")
+            print("NO OPTIONS RANDOM DIRECTION")
             return self.get_direction(random.choice(list(self.board)))
 
     # Gets destination of closest food item
@@ -121,5 +133,6 @@ class Game:
             return 'left'
         return 'right'
 
+    # number of unique body points (doesn't count stacked body points)
     def get_my_length(self, my_body):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in my_body])))

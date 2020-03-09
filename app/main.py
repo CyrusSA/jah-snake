@@ -65,6 +65,7 @@ def move():
 
     if isinstance(game, str):
         game = Game(data)
+        print "new game"
 
     game.update_game(data)
 
