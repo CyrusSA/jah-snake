@@ -2,13 +2,6 @@ import networkx as nx
 from collections import OrderedDict
 import random
 
-''' ToDos
-- Account for growth after eating
-- debug
-- Dont go for food unless path to tail
-- Dont go for food if enemy can get there first unless low health or longer than enemy by a margin
-- Chase enemy tail sometime
-'''
 
 class Game:
     def __init__(self, game_data):
@@ -37,10 +30,11 @@ class Game:
     # If turn 0, don't add any of me
     # Else don't add my head and tail
     def update_snakes(self, game_data):
+        self.snakes = []
         for snake in game_data["board"]["snakes"]:
             # Add all snakes except me to self.snakes
-            self.snakes = [(point["x"], point["y"]) for point in snake["body"] if snake["id"] != game_data["you"]["id"]]
             if snake["id"] != game_data["you"]["id"]:
+                self.snakes.extend([(point["x"], point["y"]) for point in snake["body"]])
                 x = snake["body"][0]["x"]
                 y = snake["body"][0]["y"]
                 for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
@@ -126,6 +120,5 @@ class Game:
             return 'left'
         return 'right'
 
-    # Pretty fucking obvious innit
     def get_my_length(self, my_body):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in my_body])))
