@@ -114,7 +114,7 @@ class Game:
     # Gets destination of closest food item
     def get_food_destination(self):
         shortest_food_path = []
-        for food_path in [nx.shortest_path(self.board, self.head, food) for food in self.foods]:
+        for food_path in [nx.shortest_path(self.board, self.head, food) for food in self.foods if self.board.has_node(food)]:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 try:
                     nx.shortest_path(self.board, food_path[-1], self.tail)
