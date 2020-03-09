@@ -79,36 +79,35 @@ class Game:
                 return 'up'
             if self.health < self.health_threshold:
                 try:
-                    destination = self.get_food_destination()
+                    shortest_food_path = self.get_food_destination()
+                    if shortest_food_path != []:
+                        return self.get_direction(shortest_food_path[1])
                 except nx.NetworkXNoPath:
-                    if not self.board.has_node(self.tail):
-                        self.board.add_node(self.tail)
-                        self.add_edges(self.tail)
-                    destination = nx.shortest_path(self.board, self.head, self.tail)[1]
-            else:
-                if not self.board.has_node(self.tail):
-                    self.board.add_node(self.tail)
-                    self.add_edges(self.tail)
-                shortest_path = nx.shortest_path(self.board, self.head, self.tail)
-                destination = shortest_path[1]
-                # if self.health == 100 and len(shortest_path) == 2:
-                #     x = self.head[0]
-                #     y = self.tail[1]
+                    pass
+
+            if not self.board.has_node(self.tail):
+                self.board.add_node(self.tail)
+                self.add_edges(self.tail)
+            shortest_path = nx.shortest_path(self.board, self.head, self.tail)
+            destination = shortest_path[1]
+            # if self.health == 100 and len(shortest_path) == 2:
+            #     x = self.head[0]
+            #     y = self.tail[1]
             return self.get_direction(destination)
         except nx.NodeNotFound:
             return self.get_direction(random.choice(self.board.nodes()))
 
     # Gets destination of closest food item
     def get_food_destination(self):
-        shortest_food_path = [i for i in range(1000)]
+        shortest_food_path = []
         for food_path in [nx.shortest_path(self.board, self.head, food) for food in self.foods]:
-            if len(food_path) < len(shortest_food_path):
+            if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 try:
                     nx.shortest_path(self.board, food_path[-1], self.tail)
                 except nx.NetworkXNoPath:
                     continue
                 shortest_food_path = food_path
-        return shortest_food_path[1]
+        return shortest_food_path
 
     # Returns direction to turn in order to reach destination
     def get_direction(self, destination):
