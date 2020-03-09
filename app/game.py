@@ -2,6 +2,13 @@ import networkx as nx
 from collections import OrderedDict
 import random
 
+''' ToDos
+- Account for growth after eating
+- debug
+- Dont go for food unless path to tail
+- Dont go for food if enemy can get there first unless low health or longer than enemy by a margin
+- Chase enemy tail sometime
+'''
 
 class Game:
     def __init__(self, game_data):
