@@ -97,26 +97,31 @@ class Game:
             food_destination = self.get_food_destination()
             if self.health < self.health_threshold:
                 if food_destination:
+                    print "Getting food"
                     return self.get_direction(food_destination)
 
             # Then chase tail
             tail_destination = self.get_tail_destination()
             if tail_destination:
+                print "Chasing tail"
                 return self.get_direction(tail_destination)
 
             # else chase enemy tail
             enemy_tail_destination = self.get_enemy_tail_destination()
             if enemy_tail_destination:
+                print "Chasing enemy tail"
                 return self.get_direction(enemy_tail_destination)
 
             # If none of the above, force check food
             if food_destination:
+                print "Getting food after force checking"
                 return self.get_direction(food_destination)
 
             # Random direction (maybe safe, maybe not)
+            print "Random move, no errors"
             return self.get_direction(self.get_random_destination())
         except Exception as e: # Unknown Exception, uh oh
-            print('exception in get food: {}'.format(e))
+            print('Unknown Error: {}'.format(e))
             return self.get_direction(self.get_random_destination())
 
     # Gets destination of closest food item
@@ -128,6 +133,7 @@ class Game:
                     future_board = self.update_board(self.extend_and_return_snakes(food_path[1])) # board with head cell filled and including all tails
                     nx.shortest_path(future_board, food_path[-1], self.tail)
                 except nx.NetworkXNoPath:
+                    print "Avoided cornering!!"
                     continue
                 shortest_food_path = food_path
         return shortest_food_path[1] if shortest_food_path else None
@@ -145,7 +151,7 @@ class Game:
                     tail_destination = path[1]
                     break
             if tail_destination == self.tail:
-                print("No alternate paths")
+                print "No alternate paths"
 
         return tail_destination
 
