@@ -22,13 +22,14 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 80
+        self.health_threshold = 99
+        self.just_ate = False
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
         self.head = (game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"])
         self.tail = (game_data["you"]["body"][-1]["x"], game_data["you"]["body"][-1]["y"])
-        self.my_length =  len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in game_data['you']['body']])))
+        self.my_length = len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in game_data['you']['body']])))
         self.health = game_data["you"]["health"]
         self.just_ate = (self.health == 100 and game_data["turn"] > 0)
         self.foods = [(food["x"], food["y"]) for food in game_data["board"]["food"]]
