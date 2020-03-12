@@ -52,7 +52,7 @@ class Game:
                 x = snake["body"][0]["x"]
                 y = snake["body"][0]["y"]
                 for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
-                    if node not in self.snakes:
+                    if node not in self.snakes and node not in [self.head, self.tail]:
                         self.snakes.append(node)
         if self.game_data["turn"] == 0 or self.game_data["turn"] == 1:
             return
