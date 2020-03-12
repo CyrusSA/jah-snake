@@ -16,7 +16,9 @@ class Game:
         self.health = 100
         self.head = ("", "")
         self.tail = ("", "")
-        self.board = nx.Graph()
+        self.no_tails_board = nx.Graph()
+        self.my_tail_board = nx.Graph()
+        self.enemy_tails_board = nx.Graph()
         self.foods = []
         self.snakes = []
         self.my_length = 0
@@ -33,7 +35,9 @@ class Game:
         self.just_ate = (self.health == 100 and self.game_data["turn"] > 0)
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
-        self.update_board()
+        self.no_tails_board = self.update_board(self.extend_and_return_snakes(self.get_tails()))
+        self.my_tail_board = self.update_board(self.extend_and_return_snakes(self.get_tails(True)))
+        self.enemy_tails_board = self.update_board(self.extend_and_return_snakes([self.tail]))
 
     # Populate self.snakes with snake data.
     # If turn 0, don't add any of me
@@ -44,7 +48,7 @@ class Game:
         for snake in self.game_data["board"]["snakes"]:
             # Add all snakes except me to self.snakes
             if snake["id"] != self.game_data["you"]["id"]:
-                self.snakes.extend([(point["x"], point["y"]) for point in snake["body"]])
+                self.snakes.extend([(point["x"], point["y"]) for point in snake["body"][:-1]])
                 x = snake["body"][0]["x"]
                 y = snake["body"][0]["y"]
                 for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
@@ -52,32 +56,33 @@ class Game:
                         self.snakes.append(node)
         if self.game_data["turn"] == 0 or self.game_data["turn"] == 1:
             return
-        self.snakes.extend([(point["x"], point["y"]) for point in self.game_data["you"]["body"][1:(-2 if self.just_ate else -1)]])
+        self.snakes.extend([(point["x"], point["y"]) for point in self.game_data["you"]["body"][1:(-2 if self.just_ate else -1)] if point not in self.snakes])
 
     # Creates and populates graph of board points. Does not add a point if it houses a snake.
-    def update_board(self):
-        self.board = nx.Graph()
+    def update_board(self, snakes):
+        board = nx.Graph()
         for y in range(self.board_height):
             for x in range(self.board_width):
                 current_node = (x, y)
-                if current_node in self.snakes:
+                if current_node in snakes:
                     continue
-                self.board.add_node(current_node)
-                self.add_edges(current_node)
+                board.add_node(current_node)
+                self.add_edges(board, current_node)
+        return board
 
     # Connects nodes if the potential node is already in the graph.
     # If my length is 2, do not connect head and tail.
     # Else connect
-    def add_edges(self, current_node):
+    def add_edges(self, board, current_node):
         x = current_node[0]
         y = current_node[1]
         for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
-            if self.board.has_node(node):
+            if board.has_node(node):
                 if self.my_length == 2 :
                     if (current_node not in [self.head, self.tail]) or (node not in [self.head, self.tail]):
-                        self.board.add_edge(node, current_node)
+                        board.add_edge(node, current_node)
                 else:
-                    self.board.add_edge(node, current_node)
+                    board.add_edge(node, current_node)
 
     # Returns direction to turn. If health is below threshold, move will be towards closest food item.
     # Else if turn 0, return default move
@@ -95,7 +100,7 @@ class Game:
                     pass
 
             try:
-                shortest_tail_path = nx.shortest_path(self.board, self.head, self.tail)
+                shortest_tail_path = nx.shortest_path(self.my_tail_board, self.head, self.tail)
                 if shortest_tail_path:
                     destination = shortest_tail_path[1]
                     return self.get_direction(destination)
@@ -104,7 +109,7 @@ class Game:
 
             # Two body points stacked at tail, don't follow closely
             if self.just_ate and destination == self.tail:
-                for path in nx.all_simple_paths(self.board, self.head, self.tail, 4):
+                for path in nx.all_simple_paths(self.my_tail_board, self.head, self.tail, 4):
                     if len(path) > 3:
                         destination = path[1]
                         break
@@ -120,37 +125,27 @@ class Game:
             return self.get_direction(destination)
         except nx.NodeNotFound:
             print("NO OPTIONS RANDOM DIRECTION")
-            return self.get_direction(random.choice(list(self.board)))
+            return self.get_direction(random.choice(list(self.no_tails_board)))
 
     # Gets destination of closest food item
     def get_food_destination(self):
         shortest_food_path = []
-        for food_path in [nx.shortest_path(self.board, self.head, food) for food in self.foods if self.board.has_node(food)]:
+        for food_path in [nx.shortest_path(self.no_tails_board, self.head, food) for food in self.foods if self.no_tails_board.has_node(food)]:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 try:
-                    nx.shortest_path(self.board, food_path[-1], self.tail)
+                    nx.shortest_path(self.my_tail_board, food_path[-1], self.tail)
                 except nx.NetworkXNoPath:
                     continue
                 shortest_food_path = food_path
         return shortest_food_path
 
-    # Returns direction to turn in order to reach destination
-    def get_direction(self, destination):
-        if self.head[0] == destination[0]:
-            if self.head[1] > destination[1]:
-                return 'up'
-            return 'down'
-        if self.head[0] > destination[0]:
-            return 'left'
-        return 'right'
-
     # get path to closest enemy tail
     def get_enemy_tail_destination(self):
         # remove tail with no path
         enemy_tail_paths = []
-        for tail in self.get_enemy_tails():
+        for tail in self.get_tails(True):
             try:
-                enemy_tail_paths.append(nx.shortest_path(self.board, self.head, tail))
+                enemy_tail_paths.append(nx.shortest_path(self.enemy_tails_board, self.head, tail))
             except nx.NetworkXNoPath:
                 pass
         # find and return shortest path
@@ -162,10 +157,26 @@ class Game:
                     shortest_path = path
         return shortest_path
 
-    def get_enemy_tails(self):
-        enemy_tails = []
-        # add the last body point of every snake except me to enemy_tails
+    def get_tails(self, enemy_only=False):
+        tails = []
+        # add the last body point of every snake except me to tails
         for snake in self.game_data["board"]["snakes"]:
-            if snake["id"] != self.game_data["you"]["id"]:
-                enemy_tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
-        return enemy_tails
+            if snake["id"] == self.game_data["you"]["id"] and enemy_only:
+                continue
+            tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
+        return tails
+
+    # Returns direction to turn in order to reach destination
+    def get_direction(self, destination):
+        if self.head[0] == destination[0]:
+            if self.head[1] > destination[1]:
+                return 'up'
+            return 'down'
+        if self.head[0] > destination[0]:
+            return 'left'
+        return 'right'
+
+    def extend_and_return_snakes(self, extension):
+        new_list = self.snakes[:]
+        new_list.extend(extension)
+        return new_list
