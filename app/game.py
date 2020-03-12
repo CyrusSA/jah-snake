@@ -3,10 +3,11 @@ from collections import OrderedDict
 import random
 
 '''To-do
-- Dont go for food unless path to tail - check ahead a step
-- Dont go for food if enemy can get there first unless low health or longer than enemy by a margin
+- Dont go for food unless path to tail - check ahead a step - DO NOW
+- Dont go for food if enemy can get there first unless low health or longer than enemy by a margin - DO LATER
 - go to possible enemy next move only if longer than enemy
 - If no paths, add enemy next moves to board
+- Go for food if no other paths
 '''
 
 class Game:
@@ -91,14 +92,16 @@ class Game:
         try:
             if self.my_length == 1:
                 return 'up'
-            if self.health < self.health_threshold:
-                try:
-                    shortest_food_path = self.get_food_destination()
-                    if shortest_food_path:
-                        return self.get_direction(shortest_food_path[1])
-                except nx.NetworkXNoPath:
-                    pass
 
+            shortest_food_path = []
+            try:
+                shortest_food_path = self.get_food_destination()
+            except nx.NetworkXNoPath:
+                pass
+
+            if self.health < self.health_threshold:
+                if shortest_food_path:
+                    return self.get_direction(shortest_food_path[1])
             try:
                 shortest_tail_path = nx.shortest_path(self.my_tail_board, self.head, self.tail)
                 if shortest_tail_path:
@@ -122,10 +125,13 @@ class Game:
                 return self.get_direction(shortest_enemy_tail_path[1])
 
             # return direction
-            return self.get_direction(destination)
+            if shortest_food_path:
+                return self.get_direction(shortest_food_path[1])
+
+            return self.get_direction(self.get_random_destination())
         except nx.NodeNotFound:
             print("NO OPTIONS RANDOM DIRECTION")
-            return self.get_direction(random.choice(list(self.no_tails_board)))
+            return self.get_direction(self.get_random_destination())
 
     # Gets destination of closest food item
     def get_food_destination(self):
@@ -180,3 +186,11 @@ class Game:
         new_list = self.snakes[:]
         new_list.extend(extension)
         return new_list
+
+    # get a random step into free space
+    def get_random_destination(self):
+        (x, y) = self.head
+        adjacent_nodes = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+        for node in adjacent_nodes:
+            if self.no_tails_board.has_node(node):
+                return node
