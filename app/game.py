@@ -133,15 +133,20 @@ class Game:
     # Gets destination of closest food item
     def get_food_destination(self):
         shortest_food_path = []
-        try:
-            paths = [nx.shortest_path(self.no_tails_board, self.head, food) for food in self.foods if self.no_tails_board.has_node(food)]
-        except nx.NetworkXNoPath:
-            return None
+        paths = []
+        # get shortest path to each food on no_tails_board
+        for food in self.foods:
+            if self.no_tails_board.has_node(food):
+                try:
+                    paths.append(nx.shortest_path(self.no_tails_board, self.head, food))
+                except nx.NetworkXNoPath:
+                    continue
 
+        # get and return shortest path to food with a path back to tail, look ahead 1 turn
         for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 try:
-                    future_board = self.update_board(self.extend_and_return_snakes([food_path[0]])) # board with head cell filled and including all tails
+                    future_board = self.update_board(self.extend_and_return_snakes([food_path[0]]))  # board with head cell filled and including all tails
                     nx.shortest_path(future_board, food_path[-1], self.tail)
                 except nx.NetworkXNoPath:
                     print "Avoided cornering!!"
