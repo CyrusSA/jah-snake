@@ -25,7 +25,7 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 100
+        self.health_threshold = 75
         self.just_ate = False
 
     # Updates game state with data from /move request.
