@@ -22,15 +22,15 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 75
+        self.health_threshold = 80
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
         self.head = (game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"])
         self.tail = (game_data["you"]["body"][-1]["x"], game_data["you"]["body"][-1]["y"])
-        self.my_length = self.get_my_length(game_data["you"]["body"])
+        self.my_length =  len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in game_data['you']['body']])))
         self.health = game_data["you"]["health"]
-        self.just_ate = self.health == 100 and game_data["turn"] != 0
+        self.just_ate = (self.health == 100 and game_data["turn"] > 0)
         self.foods = [(food["x"], food["y"]) for food in game_data["board"]["food"]]
         self.update_snakes(game_data)
         self.update_board()
@@ -89,7 +89,7 @@ class Game:
             if self.health < self.health_threshold:
                 try:
                     shortest_food_path = self.get_food_destination()
-                    if shortest_food_path != []:
+                    if shortest_food_path:
                         return self.get_direction(shortest_food_path[1])
                 except nx.NetworkXNoPath:
                     pass
@@ -133,6 +133,23 @@ class Game:
             return 'left'
         return 'right'
 
-    # number of unique body points (doesn't count stacked body points)
-    def get_my_length(self, my_body):
-        return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in my_body])))
+    # get path to closest enemy tail
+    def get_enemy_tail_destination(self, game_data):
+        enemy_tails = []
+        # add the last body point of every snake except me to enemy_tails
+        for snake in game_data["board"]["snakes"]:
+            if snake["id"] != game_data["you"]["id"]:
+                enemy_tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
+        # remove tails with no path
+        for tail in enemy_tails:
+            try:
+                last_path = nx.shortest_path(self.board, self.head, tail)
+            except nx.NetworkXNoPath:
+                enemy_tails.remove(tail)
+        # find and return shortest path
+        shortest_path = last_path
+        for tail in enemy_tails:
+            path = nx.shortest_path(self.board, self.head, tail)
+            if len(path) < len(shortest_path):
+                shortest_path = path
+        return shortest_path
