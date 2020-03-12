@@ -3,12 +3,10 @@ from collections import OrderedDict
 import random
 
 '''To-do
-- Account for growth after eating - DONE ish
-- debug
-- Dont go for food unless path to tail - DONE
+- Dont go for food unless path to tail - check ahead a step
 - Dont go for food if enemy can get there first unless low health or longer than enemy by a margin
-- Chase enemy tail sometime
-- Be aggressive with food early on?
+- go to possible enemy next move only if longer than enemy
+- If no paths, add enemy next moves to board
 '''
 
 class Game:
@@ -27,33 +25,34 @@ class Game:
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
-        self.head = (game_data["you"]["body"][0]["x"], game_data["you"]["body"][0]["y"])
-        self.tail = (game_data["you"]["body"][-1]["x"], game_data["you"]["body"][-1]["y"])
-        self.my_length = len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in game_data['you']['body']])))
-        self.health = game_data["you"]["health"]
-        self.just_ate = (self.health == 100 and game_data["turn"] > 0)
-        self.foods = [(food["x"], food["y"]) for food in game_data["board"]["food"]]
-        self.update_snakes(game_data)
+        self.game_data = game_data
+        self.head = (self.game_data["you"]["body"][0]["x"], self.game_data["you"]["body"][0]["y"])
+        self.tail = (self.game_data["you"]["body"][-1]["x"], self.game_data["you"]["body"][-1]["y"])
+        self.my_length =  len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in self.game_data['you']['body']])))
+        self.health = self.game_data["you"]["health"]
+        self.just_ate = (self.health == 100 and self.game_data["turn"] > 0)
+        self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
+        self.update_snakes()
         self.update_board()
 
     # Populate self.snakes with snake data.
     # If turn 0, don't add any of me
     # If just ate, don't add tail
     # Else don't add my head and tail
-    def update_snakes(self, game_data):
+    def update_snakes(self):
         self.snakes = []
-        for snake in game_data["board"]["snakes"]:
+        for snake in self.game_data["board"]["snakes"]:
             # Add all snakes except me to self.snakes
-            if snake["id"] != game_data["you"]["id"]:
+            if snake["id"] != self.game_data["you"]["id"]:
                 self.snakes.extend([(point["x"], point["y"]) for point in snake["body"]])
                 x = snake["body"][0]["x"]
                 y = snake["body"][0]["y"]
                 for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
                     if node not in self.snakes:
                         self.snakes.append(node)
-        if game_data["turn"] == 0 or game_data["turn"] == 1:
+        if self.game_data["turn"] == 0 or self.game_data["turn"] == 1:
             return
-        self.snakes.extend([(point["x"], point["y"]) for point in game_data["you"]["body"][1:(-2 if self.just_ate else -1)]])
+        self.snakes.extend([(point["x"], point["y"]) for point in self.game_data["you"]["body"][1:(-2 if self.just_ate else -1)]])
 
     # Creates and populates graph of board points. Does not add a point if it houses a snake.
     def update_board(self):
@@ -139,10 +138,10 @@ class Game:
         return 'right'
 
     # get path to closest enemy tail
-    def get_enemy_tail_destination(self, game_data):
+    def get_enemy_tail_destination(self):
         # remove tail with no path
         enemy_tail_paths = []
-        enemy_tails = self.get_enemy_tails(game_data)
+        enemy_tails = self.get_enemy_tails()
         for tail in enemy_tails:
             try:
                 enemy_tail_paths.append(nx.shortest_path(self.board, self.head, tail))
@@ -156,10 +155,10 @@ class Game:
                     shortest_path = path
             return shortest_path
 
-    def get_enemy_tails(self, game_data):
+    def get_enemy_tails(self):
         enemy_tails = []
         # add the last body point of every snake except me to enemy_tails
-        for snake in game_data["board"]["snakes"]:
-            if snake["id"] != game_data["you"]["id"]:
+        for snake in self.game_data["board"]["snakes"]:
+            if snake["id"] != self.game_data["you"]["id"]:
                 enemy_tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
         return enemy_tails
