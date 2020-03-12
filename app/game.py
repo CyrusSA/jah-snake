@@ -7,7 +7,7 @@ import random
 - Dont go for food if enemy can get there first unless low health or longer than enemy by a margin - DO LATER
 - go to possible enemy next move only if longer than enemy
 - If no paths, add enemy next moves to board
-- Go for food if no other paths - DONE
+- Dont use board to find safe moves, defeats the purpose, use game data
 - Edit food logic - discuss, turn threshold(turns, no of snakes), health threshold. Want to be longest? or nah
 - Use simple paths to fill up board - discuss
 '''
@@ -27,6 +27,8 @@ class Game:
         self.my_length = 0
         self.health_threshold = 75
         self.just_ate = False
+        self.game_data = {}
+        self.longest_snake = False
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -123,10 +125,10 @@ class Game:
 
             # Random direction (maybe safe, maybe not)
             print "Random move, no errors"
-            return self.get_direction(self.get_random_destination())
+            return self.get_direction(self.get_random_destination()[0])
         except Exception as e: # Unknown Exception, uh oh
             print('Unknown Error: {}'.format(e))
-            return self.get_direction(self.get_random_destination())
+            return self.get_direction(self.get_random_destination()[0])
 
     # Gets destination of closest food item
     def get_food_destination(self):
@@ -214,7 +216,7 @@ class Game:
             if self.no_tails_board.has_node(node):
                 return node
         # Give up
-        return (x - 1, y)
+        return [(x - 1, y)]
 
     def get_snake_length(self, snake):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
