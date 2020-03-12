@@ -106,6 +106,10 @@ class Game:
                 if destination == self.tail:
                     print("No alternate paths")
 
+            # else chase enemy tail
+            destination = self.get_enemy_tail_destination()[1]
+
+            # return direction
             return self.get_direction(destination)
         except nx.NodeNotFound:
             print("NO OPTIONS RANDOM DIRECTION")
@@ -134,22 +138,27 @@ class Game:
         return 'right'
 
     # get path to closest enemy tail
-    def get_enemy_tail_destination(self, game_data):
-        enemy_tails = []
-        # add the last body point of every snake except me to enemy_tails
-        for snake in game_data["board"]["snakes"]:
-            if snake["id"] != game_data["you"]["id"]:
-                enemy_tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
-        # remove tails with no path
+    def get_enemy_tail_destination(self):
+        # remove tail with no path
+        enemy_tail_paths = []
+        enemy_tails = self.get_enemy_tails(self.game_data)
         for tail in enemy_tails:
             try:
-                last_path = nx.shortest_path(self.board, self.head, tail)
+                enemy_tail_paths.append(nx.shortest_path(self.board, self.head, tail))
             except nx.NetworkXNoPath:
                 enemy_tails.remove(tail)
         # find and return shortest path
-        shortest_path = last_path
-        for tail in enemy_tails:
-            path = nx.shortest_path(self.board, self.head, tail)
-            if len(path) < len(shortest_path):
-                shortest_path = path
-        return shortest_path
+        if enemy_tail_paths:
+            shortest_path = enemy_tail_paths[0]
+            for path in enemy_tail_paths:
+                if len(path) < len(shortest_path):
+                    shortest_path = path
+            return shortest_path
+
+    def get_enemy_tails(self):
+        enemy_tails = []
+        # add the last body point of every snake except me to enemy_tails
+        for snake in self.game_data["board"]["snakes"]:
+            if snake["id"] != self.game_data["you"]["id"]:
+                enemy_tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
+        return enemy_tails
