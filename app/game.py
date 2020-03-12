@@ -131,7 +131,12 @@ class Game:
     # Gets destination of closest food item
     def get_food_destination(self):
         shortest_food_path = []
-        for food_path in [nx.shortest_path(self.no_tails_board, self.head, food) for food in self.foods if self.no_tails_board.has_node(food)]:
+        try:
+            paths = [nx.shortest_path(self.no_tails_board, self.head, food) for food in self.foods if self.no_tails_board.has_node(food)]
+        except nx.NetworkXNoPath:
+            return None
+
+        for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 try:
                     future_board = self.update_board(self.extend_and_return_snakes([food_path[0]])) # board with head cell filled and including all tails
