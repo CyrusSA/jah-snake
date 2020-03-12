@@ -7,7 +7,7 @@ import random
 - Dont go for food if enemy can get there first unless low health or longer than enemy by a margin - DO LATER
 - go to possible enemy next move only if longer than enemy
 - If no paths, add enemy next moves to board
-- Go for food if no other paths - DONE
+- Dont use board to find safe moves, defeats the purpose, use game data
 - Edit food logic - discuss, turn threshold(turns, no of snakes), health threshold. Want to be longest? or nah
 - Use simple paths to fill up board - discuss
 '''
