@@ -94,8 +94,13 @@ class Game:
                 except nx.NetworkXNoPath:
                     pass
 
-            shortest_path = nx.shortest_path(self.board, self.head, self.tail)
-            destination = shortest_path[1]
+            try:
+                shortest_tail_path = nx.shortest_path(self.board, self.head, self.tail)
+                if shortest_tail_path:
+                    destination = shortest_tail_path[1]
+                    return self.get_direction(destination)
+            except nx.NetworkXNoPath:
+                pass
 
             # Two body points stacked at tail, don't follow closely
             if self.just_ate and destination == self.tail:
@@ -107,7 +112,9 @@ class Game:
                     print("No alternate paths")
 
             # else chase enemy tail
-            #destination = self.get_enemy_tail_destination()[1]
+            shortest_enemy_tail_path = self.get_enemy_tail_destination()
+            if shortest_enemy_tail_path:
+                return self.get_direction(shortest_enemy_tail_path[1])
 
             # return direction
             return self.get_direction(destination)
@@ -141,19 +148,19 @@ class Game:
     def get_enemy_tail_destination(self):
         # remove tail with no path
         enemy_tail_paths = []
-        enemy_tails = self.get_enemy_tails()
-        for tail in enemy_tails:
+        for tail in self.get_enemy_tails():
             try:
                 enemy_tail_paths.append(nx.shortest_path(self.board, self.head, tail))
             except nx.NetworkXNoPath:
-                enemy_tails.remove(tail)
+                pass
         # find and return shortest path
+        shortest_path = []
         if enemy_tail_paths:
             shortest_path = enemy_tail_paths[0]
             for path in enemy_tail_paths:
                 if len(path) < len(shortest_path):
                     shortest_path = path
-            return shortest_path
+        return shortest_path
 
     def get_enemy_tails(self):
         enemy_tails = []
