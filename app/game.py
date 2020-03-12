@@ -23,7 +23,7 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 99
+        self.health_threshold = 100
         self.just_ate = False
 
     # Updates game state with data from /move request.
@@ -93,44 +93,30 @@ class Game:
             if self.my_length == 1:
                 return 'up'
 
-            shortest_food_path = []
-            try:
-                shortest_food_path = self.get_food_destination()
-            except nx.NetworkXNoPath:
-                pass
-
+            # Check food case first
+            food_destination = self.get_food_destination()
             if self.health < self.health_threshold:
-                if shortest_food_path:
-                    return self.get_direction(shortest_food_path[1])
-            try:
-                shortest_tail_path = nx.shortest_path(self.my_tail_board, self.head, self.tail)
-                if shortest_tail_path:
-                    destination = shortest_tail_path[1]
-                    return self.get_direction(destination)
-            except nx.NetworkXNoPath:
-                pass
+                if food_destination:
+                    return self.get_direction(food_destination)
 
-            # Two body points stacked at tail, don't follow closely
-            if self.just_ate and destination == self.tail:
-                for path in nx.all_simple_paths(self.my_tail_board, self.head, self.tail, 4):
-                    if len(path) > 3:
-                        destination = path[1]
-                        break
-                if destination == self.tail:
-                    print("No alternate paths")
+            # Then chase tail
+            tail_destination = self.get_tail_destination()
+            if tail_destination:
+                return self.get_direction(tail_destination)
 
             # else chase enemy tail
-            shortest_enemy_tail_path = self.get_enemy_tail_destination()
-            if shortest_enemy_tail_path:
-                return self.get_direction(shortest_enemy_tail_path[1])
+            enemy_tail_destination = self.get_enemy_tail_destination()
+            if enemy_tail_destination:
+                return self.get_direction(enemy_tail_destination)
 
-            # return direction
-            if shortest_food_path:
-                return self.get_direction(shortest_food_path[1])
+            # If none of the above, force check food
+            if food_destination:
+                return self.get_direction(food_destination)
 
+            # Random direction (maybe safe, maybe not)
             return self.get_direction(self.get_random_destination())
-        except nx.NodeNotFound:
-            print("NO OPTIONS RANDOM DIRECTION")
+        except Exception as e: # Unknown Exception, uh oh
+            print('exception in get food: {}'.format(e))
             return self.get_direction(self.get_random_destination())
 
     # Gets destination of closest food item
@@ -144,7 +130,24 @@ class Game:
                 except nx.NetworkXNoPath:
                     continue
                 shortest_food_path = food_path
-        return shortest_food_path
+        return shortest_food_path[1] if shortest_food_path else None
+
+    def get_tail_destination(self):
+        try:
+            tail_destination = nx.shortest_path(self.my_tail_board, self.head, self.tail)[1]
+        except nx.NetworkXNoPath:
+            return None
+
+        # Two body points stacked at tail, don't follow closely
+        if self.just_ate and tail_destination and tail_destination == self.tail:
+            for path in nx.all_simple_paths(self.my_tail_board, self.head, self.tail, 4):
+                if len(path) > 3:
+                    tail_destination = path[1]
+                    break
+            if tail_destination == self.tail:
+                print("No alternate paths")
+
+        return tail_destination
 
     # get path to closest enemy tail
     def get_enemy_tail_destination(self):
@@ -162,7 +165,7 @@ class Game:
             for path in enemy_tail_paths:
                 if len(path) < len(shortest_path):
                     shortest_path = path
-        return shortest_path
+        return shortest_path[1] if shortest_path else None
 
     def get_tails(self, enemy_only=False):
         tails = []
@@ -195,3 +198,5 @@ class Game:
         for node in adjacent_nodes:
             if self.no_tails_board.has_node(node):
                 return node
+        # Give up
+        return (x - 1, y)
