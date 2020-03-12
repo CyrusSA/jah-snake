@@ -139,7 +139,8 @@ class Game:
         for food_path in [nx.shortest_path(self.no_tails_board, self.head, food) for food in self.foods if self.no_tails_board.has_node(food)]:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 try:
-                    nx.shortest_path(self.my_tail_board, food_path[-1], self.tail)
+                    future_board = self.update_board(self.extend_and_return_snakes(food_path[1])) # board with head cell filled and including all tails
+                    nx.shortest_path(future_board, food_path[-1], self.tail)
                 except nx.NetworkXNoPath:
                     continue
                 shortest_food_path = food_path
