@@ -135,12 +135,7 @@ class Game:
 
     # get path to closest enemy tail
     def get_enemy_tail_destination(self, game_data):
-        enemy_tails = []
-        # add the last body point of every snake except me to enemy_tails
-        for snake in game_data["board"]["snakes"]:
-            if snake["id"] != game_data["you"]["id"]:
-                enemy_tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
-        # remove tails with no path
+        enemy_tails = self.get_enemy_tails(game_data)# remove tails with no path
         for tail in enemy_tails:
             try:
                 last_path = nx.shortest_path(self.board, self.head, tail)
@@ -153,3 +148,10 @@ class Game:
             if len(path) < len(shortest_path):
                 shortest_path = path
         return shortest_path
+
+    def get_enemy_tails(self, game_data):
+        enemy_tails = []
+        # add the last body point of every snake except me to enemy_tails
+        for snake in game_data["board"]["snakes"]:
+            if snake["id"] != game_data["you"]["id"]:
+                enemy_tails.append((snake["body"][-1]["x"], snake["body"][-1]["y"]))
