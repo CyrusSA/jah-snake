@@ -8,6 +8,7 @@ import random
 - go to possible enemy next move only if longer than enemy
 - If no paths, add enemy next moves to board
 - Go for food if no other paths - DONE
+- Edit food logic - discuss, turn threshold(turns, no of snakes), health threshold. Want to be longest? or nah
 - Use simple paths to fill up board - discuss
 '''
 
@@ -32,7 +33,7 @@ class Game:
         self.game_data = game_data
         self.head = (self.game_data["you"]["body"][0]["x"], self.game_data["you"]["body"][0]["y"])
         self.tail = (self.game_data["you"]["body"][-1]["x"], self.game_data["you"]["body"][-1]["y"])
-        self.my_length =  len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in self.game_data['you']['body']])))
+        self.my_length = self.get_snake_length(self.game_data["you"]["body"])
         self.health = self.game_data["you"]["health"]
         self.just_ate = (self.health == 100 and self.game_data["turn"] > 0)
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
@@ -40,6 +41,8 @@ class Game:
         self.no_tails_board = self.update_board(self.extend_and_return_snakes(self.get_tails()))
         self.my_tail_board = self.update_board(self.extend_and_return_snakes(self.get_tails(True)))
         self.enemy_tails_board = self.update_board(self.extend_and_return_snakes([self.tail]))
+        self.longest_snake = bool([snake for snake in self.game_data["board"]["snakes"] if snake["id"] != self.game_data["you"]["id"]
+                                   and self.get_snake_length(snake["body"]) < self.my_length])
 
     # Populate self.snakes with snake data.
     # If turn 0, don't add any of me
@@ -96,7 +99,7 @@ class Game:
 
             # Check food case first
             food_destination = self.get_food_destination()
-            if self.health < self.health_threshold:
+            if self.health < self.health_threshold or not self.longest_snake:
                 if food_destination:
                     print "Getting food"
                     return self.get_direction(food_destination)
@@ -207,3 +210,6 @@ class Game:
                 return node
         # Give up
         return (x - 1, y)
+
+    def get_snake_length(self, snake):
+        return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
