@@ -4,3 +4,4 @@ battlesnake
 .idea
 .vscode
 logs/
+venv/

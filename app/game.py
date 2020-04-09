@@ -27,6 +27,8 @@ class Game:
         self.my_length = 0
         self.health_threshold = 75
         self.just_ate = False
+        self.game_data = {}
+        self.longest_snake = False
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -57,7 +59,7 @@ class Game:
                 x = snake["body"][0]["x"]
                 y = snake["body"][0]["y"]
                 for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
-                    if node not in self.snakes and node not in [self.head, self.tail] and self.get_snake_length(snake["body"]) > self.my_length:
+                    if node not in self.snakes and node not in [self.head, self.tail] and len(snake["body"]) >= self.my_length:
                         self.snakes.append(node)
         if self.game_data["turn"] == 0 or self.game_data["turn"] == 1:
             return
@@ -123,23 +125,28 @@ class Game:
 
             # Random direction (maybe safe, maybe not)
             print "Random move, no errors"
-            return self.get_direction(self.get_random_destination())
+            return self.get_direction(self.get_random_destination()[0])
         except Exception as e: # Unknown Exception, uh oh
             print('Unknown Error: {}'.format(e))
-            return self.get_direction(self.get_random_destination())
+            return self.get_direction(self.get_random_destination()[0])
 
     # Gets destination of closest food item
     def get_food_destination(self):
         shortest_food_path = []
-        try:
-            paths = [nx.shortest_path(self.no_tails_board, self.head, food) for food in self.foods if self.no_tails_board.has_node(food)]
-        except nx.NetworkXNoPath:
-            return None
+        paths = []
+        # get shortest path to each food on no_tails_board
+        for food in self.foods:
+            if self.no_tails_board.has_node(food):
+                try:
+                    paths.append(nx.shortest_path(self.no_tails_board, self.head, food))
+                except nx.NetworkXNoPath:
+                    continue
 
+        # get and return shortest path to food with a path back to tail, look ahead 1 turn
         for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 try:
-                    future_board = self.update_board(self.extend_and_return_snakes([food_path[0]])) # board with head cell filled and including all tails
+                    future_board = self.update_board(self.extend_and_return_snakes([food_path[0]]))  # board with head cell filled and including all tails
                     nx.shortest_path(future_board, food_path[-1], self.tail)
                 except nx.NetworkXNoPath:
                     print "Avoided cornering!!"
@@ -214,7 +221,7 @@ class Game:
             if self.no_tails_board.has_node(node):
                 return node
         # Give up
-        return (x - 1, y)
+        return [(x - 1, y)]
 
     def get_snake_length(self, snake):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
