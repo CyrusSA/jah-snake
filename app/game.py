@@ -32,7 +32,6 @@ class Game:
         self.game_data = {}
         self.longest_snake = False
         self.astar_heuristic = lambda node, unneeded : math.sqrt(sum([(a - b) ** 2 for a, b in zip(node, (5,5))]))
-        self.kill = 0
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -100,8 +99,7 @@ class Game:
     # Else move towards tail
     def get_move(self):
         try:
-            if self.my_length == 1 or self.kill:
-                print 'killed'
+            if self.my_length == 1:
                 return 'up'
 
             # Check food case first
@@ -133,7 +131,6 @@ class Game:
             return self.get_direction(self.get_random_destination())
         except Exception as e: # Unknown Exception, uh oh
             print 'Unknown Error: {}'.format(e)
-            self.kill = 1
             return self.get_direction(self.get_random_destination())
 
     # Gets destination of closest food item
