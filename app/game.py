@@ -27,7 +27,7 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 75
+        self.health_threshold = 99
         self.just_ate = {}
         self.game_data = {}
         self.longest_snake = False
@@ -48,6 +48,7 @@ class Game:
         self.enemy_tails_board = self.update_board(self.extend_and_return_snakes([self.tail]))
         self.longest_snake = bool([snake for snake in self.game_data["board"]["snakes"] if snake["id"] != self.game_data["you"]["id"]
                                    and self.get_snake_length(snake["body"]) < self.my_length])
+        #self.health_threshold = 99 if len(self.game_data['board']['snakes']) > 2 else 80
 
     # Populate self.snakes with snake data.
     # If turn 0, don't add any of me
