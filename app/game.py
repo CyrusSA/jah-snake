@@ -164,16 +164,7 @@ class Game:
         except nx.NetworkXNoPath:
             return None
 
-        # Two body points stacked at tail, don't follow closely
-        if self.just_ate[self.id] and tail_destination and tail_destination == self.tail:
-            for path in nx.all_simple_paths(self.my_tail_board, self.head, self.tail, 4):
-                if len(path) > 3:
-                    tail_destination = path[1]
-                    break
-            if tail_destination == self.tail:
-                print "No alternate paths"
-
-        return tail_destination
+        return self.tail_chase_detour(self.my_tail_board, tail_destination, self.tail, self.id)
 
     # get path to closest enemy tail
     def get_enemy_tail_destination(self):
@@ -191,7 +182,22 @@ class Game:
             for path in enemy_tail_paths:
                 if len(path) < len(shortest_path):
                     shortest_path = path
-        return shortest_path[1] if shortest_path else None
+        if not shortest_path:
+            return None
+        enemy_id = [snake for snake in self.game_data['board']['snakes'] if snake['body'][-1]['x'] == shortest_path[-1][0] and snake['body'][-1]['y'] == shortest_path[-1][1]][0]['id']
+        return self.tail_chase_detour(self.enemy_tails_board, shortest_path[1], shortest_path[-1], enemy_id)
+
+    def tail_chase_detour(self, board, tail_destination, tail, id):
+        # Two body points stacked at tail, don't follow closely
+        if self.just_ate[id] and tail_destination and tail_destination == tail:
+            for path in nx.all_simple_paths(board, self.head, tail, 4):
+                if len(path) > 3:
+                    tail_destination = path[1]
+                    break
+            if tail_destination == tail:
+                print "No alternate paths"
+
+        return tail_destination
 
     def get_tails(self, enemy_only=False):
         tails = []
