@@ -31,7 +31,7 @@ class Game:
         self.just_ate = {}
         self.game_data = {}
         self.longest_snake = False
-        self.astar_heuristic = lambda node, unneeded : math.sqrt(sum([(a - b) ** 2 for a, b in zip(node, (5,5))]))
+        self.astar_heuristic = lambda node, unneeded : sum([(a - b) ** 2 for a, b in zip(node, (5,5))])
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
