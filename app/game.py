@@ -13,8 +13,6 @@ import math
 - Use simple paths to fill up board - discuss
 '''
 
-kill = 0
-
 class Game:
     def __init__(self, game_data):
         self.board_height = game_data['board']['height']
@@ -32,6 +30,8 @@ class Game:
         self.just_ate = False
         self.game_data = {}
         self.longest_snake = False
+        self.astar_heuristic = lambda node, unneeded : math.sqrt(sum([(a - b) ** 2 for a, b in zip(node, (5,5))]))
+        self.kill = 0
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -98,9 +98,8 @@ class Game:
     # Else if turn 0, return default move
     # Else move towards tail
     def get_move(self):
-        global kill
         try:
-            if self.my_length == 1 or kill:
+            if self.my_length == 1 or self.kill:
                 return 'up'
 
             # Check food case first
@@ -131,8 +130,8 @@ class Game:
             print "Random move, no errors"
             return self.get_direction(self.get_random_destination())
         except Exception as e: # Unknown Exception, uh oh
-            print('Unknown Error: {}'.format(e))
-            kill = 1
+            print 'Unknown Error: {}'.format(e)
+            self.kill = 1
             return self.get_direction(self.get_random_destination())
 
     # Gets destination of closest food item
@@ -143,7 +142,7 @@ class Game:
         for food in self.foods:
             if self.no_tails_board.has_node(food):
                 try:
-                    paths.append(nx.astar_path(self.no_tails_board, self.head, food, lambda node, unneeded : math.sqrt(sum([(a - b) ** 2 for a, b in zip(node, (5,5))]))))
+                    paths.append(nx.astar_path(self.no_tails_board, self.head, food, self.astar_heuristic))
                 except nx.NetworkXNoPath:
                     continue
 
@@ -161,7 +160,7 @@ class Game:
 
     def get_tail_destination(self):
         try:
-            tail_destination = nx.shortest_path(self.my_tail_board, self.head, self.tail)[1]
+            tail_destination = nx.astar_path(self.my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
         except nx.NetworkXNoPath:
             return None
 
