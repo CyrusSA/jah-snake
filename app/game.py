@@ -1,6 +1,7 @@
 import networkx as nx
 from collections import OrderedDict
 import random
+import math
 
 '''To-do
 - Dont go for food unless path to tail - check ahead a step - DONEish - logic is weak rn, needs discussion
@@ -11,6 +12,8 @@ import random
 - Edit food logic - discuss, turn threshold(turns, no of snakes), health threshold. Want to be longest? or nah
 - Use simple paths to fill up board - discuss
 '''
+
+kill = 0
 
 class Game:
     def __init__(self, game_data):
@@ -25,7 +28,7 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 75
+        self.health_threshold = 99
         self.just_ate = False
         self.game_data = {}
         self.longest_snake = False
@@ -95,8 +98,9 @@ class Game:
     # Else if turn 0, return default move
     # Else move towards tail
     def get_move(self):
+        global kill
         try:
-            if self.my_length == 1:
+            if self.my_length == 1 or kill:
                 return 'up'
 
             # Check food case first
@@ -125,10 +129,11 @@ class Game:
 
             # Random direction (maybe safe, maybe not)
             print "Random move, no errors"
-            return self.get_direction(self.get_random_destination()[0])
+            return self.get_direction(self.get_random_destination())
         except Exception as e: # Unknown Exception, uh oh
             print('Unknown Error: {}'.format(e))
-            return self.get_direction(self.get_random_destination()[0])
+            kill = 1
+            return self.get_direction(self.get_random_destination())
 
     # Gets destination of closest food item
     def get_food_destination(self):
@@ -138,7 +143,7 @@ class Game:
         for food in self.foods:
             if self.no_tails_board.has_node(food):
                 try:
-                    paths.append(nx.shortest_path(self.no_tails_board, self.head, food))
+                    paths.append(nx.astar_path(self.no_tails_board, self.head, food, lambda node, unneeded : math.sqrt(sum([(a - b) ** 2 for a, b in zip(node, (5,5))]))))
                 except nx.NetworkXNoPath:
                     continue
 
@@ -221,7 +226,20 @@ class Game:
             if self.no_tails_board.has_node(node):
                 return node
         # Give up
-        return [(x - 1, y)]
+        return (x - 1, y)
 
     def get_snake_length(self, snake):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
+
+    # def pathfind(self, board, source, dest):
+    #     me = self.game_data['you']
+    #     enemies = sorted([snake['body'] for snake in self.game_data['board']['snakes'] if snake['id'] != me['id']], key = lambda body : math.fabs(body[0]['x'] - self.head[0]) + math.fabs(body[0]['y'] - self.head[1]))
+    #
+
+
+
+#     def get_snake_gradient(self, snake):
+#     	offset = 
+
+# class Gradient:
+# 	def __init__(self, snake):
