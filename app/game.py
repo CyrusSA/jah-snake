@@ -20,6 +20,7 @@ class Game:
         self.health = 100
         self.head = ("", "")
         self.tail = ("", "")
+        self.id = game_data['you']['id']
         self.no_tails_board = nx.Graph()
         self.my_tail_board = nx.Graph()
         self.enemy_tails_board = nx.Graph()
@@ -27,7 +28,7 @@ class Game:
         self.snakes = []
         self.my_length = 0
         self.health_threshold = 99
-        self.just_ate = False
+        self.just_ate = {}
         self.game_data = {}
         self.longest_snake = False
         self.astar_heuristic = lambda node, unneeded : math.sqrt(sum([(a - b) ** 2 for a, b in zip(node, (5,5))]))
@@ -40,7 +41,7 @@ class Game:
         self.tail = (self.game_data["you"]["body"][-1]["x"], self.game_data["you"]["body"][-1]["y"])
         self.my_length = self.get_snake_length(self.game_data["you"]["body"])
         self.health = self.game_data["you"]["health"]
-        self.just_ate = (self.health == 100 and self.game_data["turn"] > 0)
+        self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
         self.no_tails_board = self.update_board(self.extend_and_return_snakes(self.get_tails()))
@@ -58,7 +59,7 @@ class Game:
         for snake in self.game_data["board"]["snakes"]:
             # Add all snakes except me to self.snakes
             if snake["id"] != self.game_data["you"]["id"]:
-                self.snakes.extend([(point["x"], point["y"]) for point in snake["body"][:-1]])
+                self.snakes.extend([(point["x"], point["y"]) for point in snake["body"][:(-2 if self.just_ate[snake['id']] else -1)]])
                 x = snake["body"][0]["x"]
                 y = snake["body"][0]["y"]
                 for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
@@ -66,7 +67,7 @@ class Game:
                         self.snakes.append(node)
         if self.game_data["turn"] == 0 or self.game_data["turn"] == 1:
             return
-        self.snakes.extend([(point["x"], point["y"]) for point in self.game_data["you"]["body"][1:(-2 if self.just_ate else -1)] if point not in self.snakes])
+        self.snakes.extend([(point["x"], point["y"]) for point in self.game_data["you"]["body"][1:(-2 if self.just_ate[self.id] else -1)] if point not in self.snakes])
 
     # Creates and populates graph of board points. Does not add a point if it houses a snake.
     def update_board(self, snakes):
@@ -100,6 +101,7 @@ class Game:
     def get_move(self):
         try:
             if self.my_length == 1 or self.kill:
+                print 'killed'
                 return 'up'
 
             # Check food case first
@@ -165,7 +167,7 @@ class Game:
             return None
 
         # Two body points stacked at tail, don't follow closely
-        if self.just_ate and tail_destination and tail_destination == self.tail:
+        if self.just_ate[self.id] and tail_destination and tail_destination == self.tail:
             for path in nx.all_simple_paths(self.my_tail_board, self.head, self.tail, 4):
                 if len(path) > 3:
                     tail_destination = path[1]
@@ -226,6 +228,10 @@ class Game:
                 return node
         # Give up
         return (x - 1, y)
+
+    def calc_just_ate(self):
+        for snake in self.game_data['board']['snakes']:
+            self.just_ate[snake['id']] = (snake['health'] == 100 and self.game_data["turn"] > 0)
 
     def get_snake_length(self, snake):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
