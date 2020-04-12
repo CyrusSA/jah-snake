@@ -142,19 +142,22 @@ class Game:
         for food in self.foods:
             if self.no_tails_board.has_node(food):
                 try:
-                    paths.append(nx.astar_path(self.no_tails_board, self.head, food, self.astar_heuristic))
+                    if self.game_data['turn'] < 30:
+                        paths.append(nx.shortest_path(self.no_tails_board, self.head, food))
+                    else:
+                        paths.append(nx.astar_path(self.no_tails_board, self.head, food, self.astar_heuristic))
                 except nx.NetworkXNoPath:
                     continue
 
         # get and return shortest path to food with a path back to tail, look ahead 1 turn
         for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
-                try:
-                    future_board = self.update_board(self.extend_and_return_snakes([food_path[0]]))  # board with head cell filled and including all tails
-                    nx.shortest_path(future_board, food_path[-1], self.tail)
-                except nx.NetworkXNoPath:
-                    print "Avoided cornering!!"
-                    continue
+                # try:
+                #     future_board = self.update_board(self.extend_and_return_snakes([food_path[0]]))  # board with head cell filled and including all tails
+                #     nx.shortest_path(future_board, food_path[-1], self.tail)
+                # except nx.NetworkXNoPath:
+                #     print "Avoided cornering!!"
+                #     continue
                 shortest_food_path = food_path
         return shortest_food_path[1] if shortest_food_path else None
 
@@ -239,16 +242,3 @@ class Game:
 
     def get_snake_length(self, snake):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
-
-    # def pathfind(self, board, source, dest):
-    #     me = self.game_data['you']
-    #     enemies = sorted([snake['body'] for snake in self.game_data['board']['snakes'] if snake['id'] != me['id']], key = lambda body : math.fabs(body[0]['x'] - self.head[0]) + math.fabs(body[0]['y'] - self.head[1]))
-    #
-
-
-
-#     def get_snake_gradient(self, snake):
-#     	offset = 
-
-# class Gradient:
-# 	def __init__(self, snake):
