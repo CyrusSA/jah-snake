@@ -31,7 +31,7 @@ class Game:
         self.just_ate = {}
         self.game_data = {}
         self.longest_snake = False
-        self.astar_heuristic = lambda unneeded, node : sum([(a - b) ** 2 for a, b in zip(node, (5,5))])
+        self.astar_heuristic = lambda n1, n2 : sum([(node[0] - 5) ** 2 + (node[1] - 5) ** 2 for node in (n1, n2)])
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
 
