@@ -227,7 +227,7 @@ class Game:
         (x, y) = self.head
         adjacent_nodes = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
         for node in adjacent_nodes:
-            if self.no_tails_board.has_node(node):
+            if self.connectivity_board.has_node(node):
                 return node
         # Give up
         return (x - 1, y)
