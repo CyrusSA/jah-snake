@@ -43,9 +43,10 @@ class Game:
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
-        self.no_tails_board = self.update_board(self.extend_and_return_snakes(self.get_tails()))
-        self.my_tail_board = self.update_board(self.extend_and_return_snakes(self.get_tails(True)))
-        self.enemy_tails_board = self.update_board(self.extend_and_return_snakes([self.tail]))
+        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.get_tails()))
+        self.my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.get_tails(True)))
+        self.enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]))
+        self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.get_tails()))
         self.longest_snake = bool([snake for snake in self.game_data["board"]["snakes"] if snake["id"] != self.game_data["you"]["id"]
                                    and self.get_snake_length(snake["body"]) < self.my_length])
         #self.health_threshold = 99 if len(self.game_data['board']['snakes']) > 2 else 80
@@ -152,13 +153,8 @@ class Game:
         # get and return shortest path to food with a path back to tail, look ahead 1 turn
         for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
-                # try:
-                #     future_board = self.update_board(self.extend_and_return_snakes([food_path[0]]))  # board with head cell filled and including all tails
-                #     nx.shortest_path(future_board, food_path[-1], self.tail)
-                # except nx.NetworkXNoPath:
-                #     print "Avoided cornering!!"
-                #     continue
-                shortest_food_path = food_path
+                if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) > self.my_length:
+                    shortest_food_path = food_path
         return shortest_food_path[1] if shortest_food_path else None
 
     def get_tail_destination(self):
@@ -221,8 +217,8 @@ class Game:
             return 'left'
         return 'right'
 
-    def extend_and_return_snakes(self, extension):
-        new_list = self.snakes[:]
+    def extend_and_return(self, snakes, extension):
+        new_list = snakes[:]
         new_list.extend(extension)
         return new_list
 
