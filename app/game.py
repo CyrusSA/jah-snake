@@ -27,7 +27,7 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 99
+        self.health_threshold = 100
         self.just_ate = {}
         self.game_data = {}
         self.longest_snake = False
@@ -106,7 +106,7 @@ class Game:
 
             # Check food case first
             food_destination = self.get_food_destination()
-            if self.health < self.health_threshold or not self.longest_snake:
+            if self.health <= self.health_threshold or not self.longest_snake:
                 if food_destination:
                     print "Getting food"
                     return self.get_direction(food_destination)
