@@ -4,6 +4,7 @@ import random
 import math
 
 '''To-do
+- Edge case where enemy head is next to our tail
 - Dont go for food unless path to tail - check ahead a step - DONEish - logic is weak rn, needs discussion
 - Dont go for food if enemy can get there first unless low health or longer than enemy by a margin - DO LATER
 - go to possible enemy next move only if longer than enemy
@@ -30,7 +31,6 @@ class Game:
         self.health_threshold = 0
         self.just_ate = {}
         self.game_data = {}
-        self.longest_snake = False
         self.astar_heuristic = lambda n1, n2 : sum([(node[0] - 5) ** 2 + (node[1] - 5) ** 2 for node in (n1, n2)])
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
@@ -50,8 +50,7 @@ class Game:
         self.my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.get_tails(True)))
         self.enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]))
         self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.get_tails()))
-        self.longest_snake = bool([snake for snake in self.game_data["board"]["snakes"] if snake["id"] != self.game_data["you"]["id"]
-                                   and self.get_snake_length(snake["body"]) < self.my_length])
+
         #self.health_threshold = 99 if len(self.game_data['board']['snakes']) > 2 else 80
 
     # Populate self.snakes with snake data.
@@ -69,6 +68,7 @@ class Game:
                 for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
                     if node not in self.snakes and node not in [self.head, self.tail] and len(snake["body"]) >= self.my_length:
                         self.snakes.append(node)
+
         if self.game_data["turn"] == 0 or self.game_data["turn"] == 1:
             return
         self.snakes.extend([(point["x"], point["y"]) for point in self.game_data["you"]["body"][1:(-2 if self.just_ate[self.id] else -1)] if point not in self.snakes])
@@ -93,7 +93,7 @@ class Game:
         y = current_node[1]
         for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
             if board.has_node(node):
-                if self.my_length == 2 :
+                if self.my_length == 2:
                     if (current_node not in [self.head, self.tail]) or (node not in [self.head, self.tail]):
                         board.add_edge(node, current_node)
                 else:
@@ -254,3 +254,12 @@ class Game:
 
     def get_snake_length(self, snake):
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
+
+    # probably a way to do this with an in place sort
+    def longest_snake(self):
+        longest_snake = self.game_data["you"]
+        for snake in self.game_data["board"]["snakes"]:
+            if self.get_snake_length(snake["body"]) > self.get_snake_length(longest_snake["body"]):
+                longest_snake = snake
+        return longest_snake
+
