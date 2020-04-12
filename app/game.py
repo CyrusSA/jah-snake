@@ -31,7 +31,7 @@ class Game:
         self.just_ate = {}
         self.game_data = {}
         self.longest_snake = False
-        self.astar_heuristic = lambda node, unneeded : sum([(a - b) ** 2 for a, b in zip(node, (5,5))])
+        self.astar_heuristic = lambda unneeded, node : sum([(a - b) ** 2 for a, b in zip(node, (5,5))])
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
 
@@ -153,6 +153,13 @@ class Game:
                         paths.append(nx.astar_path(self.no_tails_board, self.head, food, self.astar_heuristic))
                 except nx.NetworkXNoPath:
                     continue
+
+                # shortest_enemy_path_len = 0
+                # for snake in self.game_data['board']['snakes']:
+                #     if snake['id'] == self.id or len(snake['body'] < self.my_length):
+                #         continue
+                #     try:
+                #         path = nx.shortest_path(self.connectivity_board)
 
         # get and return shortest path to food with a path back to tail, look ahead 1 turn
         for food_path in paths:
