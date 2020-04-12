@@ -184,6 +184,8 @@ class Game:
         # remove tail with no path
         enemy_tail_paths = []
         for tail in self.get_tails(True):
+            if not self.enemy_tails_board.has_node(tail):
+                continue
             try:
                 enemy_tail_paths.append(nx.shortest_path(self.enemy_tails_board, self.head, tail))
             except nx.NetworkXNoPath:
