@@ -27,11 +27,13 @@ class Game:
         self.foods = []
         self.snakes = []
         self.my_length = 0
-        self.health_threshold = 100
+        self.health_threshold = 0
         self.just_ate = {}
         self.game_data = {}
         self.longest_snake = False
         self.astar_heuristic = lambda node, unneeded : sum([(a - b) ** 2 for a, b in zip(node, (5,5))])
+        self.danger_zone_lower = 1
+        self.danger_zone_upper = 9
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -40,6 +42,7 @@ class Game:
         self.tail = (self.game_data["you"]["body"][-1]["x"], self.game_data["you"]["body"][-1]["y"])
         self.my_length = self.get_snake_length(self.game_data["you"]["body"])
         self.health = self.game_data["you"]["health"]
+        self.health_threshold = 100 if self.game_data['turn'] < 30 else 60
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
@@ -106,10 +109,9 @@ class Game:
 
             # Check food case first
             food_destination = self.get_food_destination()
-            if self.health <= self.health_threshold or not self.longest_snake:
-                if food_destination:
-                    print "Getting food"
-                    return self.get_direction(food_destination)
+            if food_destination:
+                print "Getting food"
+                return self.get_direction(food_destination)
 
             # Then chase tail
             tail_destination = self.get_tail_destination()
@@ -141,6 +143,8 @@ class Game:
         paths = []
         # get shortest path to each food on no_tails_board
         for food in self.foods:
+            if self.in_danger_zone(food) and self.health > self.health_threshold:
+                continue
             if self.no_tails_board.has_node(food):
                 try:
                     if self.game_data['turn'] < 30:
@@ -156,6 +160,9 @@ class Game:
                 if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) > self.my_length:
                     shortest_food_path = food_path
         return shortest_food_path[1] if shortest_food_path else None
+
+    def in_danger_zone(self, food):
+        return food[0] + food[1] <= 2
 
     def get_tail_destination(self):
         try:
