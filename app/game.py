@@ -240,12 +240,16 @@ class Game:
 
     # get a random step into free space
     def get_random_destination(self):
+        self.my_length = 99
+        self.update_snakes()
+        random_move_board = self.update_board(self.extend_and_return(self.snakes, self.get_tails()))
         (x, y) = self.head
         adjacent_nodes = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
         for node in adjacent_nodes:
-            if self.connectivity_board.has_node(node):
+            if random_move_board.has_node(node):
                 return node
         # Give up
+        print "give up"
         return (x - 1, y)
 
     def calc_just_ate(self):
