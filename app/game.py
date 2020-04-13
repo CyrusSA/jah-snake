@@ -25,14 +25,13 @@ class Game:
         self.no_tails_board = nx.Graph()
         self.my_tail_board = nx.Graph()
         self.enemy_tails_board = nx.Graph()
-        self.connectivity_board = nx.Graph()
         self.foods = []
         self.snakes = []
         self.my_length = 0
         self.health_threshold = 0
         self.just_ate = {}
         self.game_data = {}
-        self.astar_heuristic = lambda n1, n2: sum([(node[0] - 5) ** 2 + (node[1] - 5) ** 2 for node in (n1, n2)])
+        self.astar_heuristic = lambda n1, n2 : sum([(node[0] - 5) ** 2 + (node[1] - 5) ** 2 for node in (n1, n2)])
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
 
@@ -50,7 +49,7 @@ class Game:
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.get_tails()))
         self.my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.get_tails(True)))
         self.enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]))
-        self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.force_longest_update_snakes(), [self.head]), self.get_tails()))
+        self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.get_tails()))
 
         #self.health_threshold = 99 if len(self.game_data['board']['snakes']) > 2 else 80
 
@@ -247,7 +246,6 @@ class Game:
             if self.connectivity_board.has_node(node):
                 return node
         # Give up
-        print "give up"
         return (x - 1, y)
 
     def calc_just_ate(self):
@@ -265,8 +263,3 @@ class Game:
                 longest_snake = snake
         return longest_snake
 
-    # pretend to be big
-    def force_longest_update_snakes(self):
-        self.my_length = 99
-        self.update_snakes()
-        return self.snakes
