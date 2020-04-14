@@ -211,6 +211,7 @@ class Game:
                     break
             if tail_destination == tail:
                 print "No alternate paths"
+                return None
 
         return tail_destination
 
