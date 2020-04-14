@@ -1,7 +1,6 @@
 import networkx as nx
 from collections import OrderedDict
-import random
-import math
+import operator
 
 '''To-do
 - Edge case where enemy head is next to our tail
@@ -169,7 +168,12 @@ class Game:
         return shortest_food_path[1] if shortest_food_path else None
 
     def in_danger_zone(self, food):
-        return food[0] + food[1] <= 2
+        limits = [self.danger_zone_lower, self.danger_zone_upper]
+        return food not in [(i,j) for i in limits for j in limits] and (
+                (food[0] <= self.danger_zone_lower and food[1] <= self.danger_zone_lower)
+                or (food[0] <= self.danger_zone_lower and food[1] >= self.danger_zone_upper)
+                or (food[0] >= self.danger_zone_upper and food[1] <= self.danger_zone_lower)
+                or (food[0] >= self.danger_zone_upper and food[1] >= self.danger_zone_upper))
 
     def get_tail_destination(self):
         try:
