@@ -125,8 +125,9 @@ class Game:
                 return self.get_direction(enemy_tail_destination)
 
             # If none of the above, force check food
+            food_destination = self.get_food_destination(True)
             if food_destination:
-                print "Getting food after force checking"
+                print "Getting food"
                 return self.get_direction(food_destination)
 
             # Random direction (maybe safe, maybe not)
@@ -137,12 +138,12 @@ class Game:
             return self.get_direction(self.get_random_destination())
 
     # Gets destination of closest food item
-    def get_food_destination(self):
+    def get_food_destination(self, force = False):
         shortest_food_path = []
         paths = []
         # get shortest path to each food on no_tails_board
         for food in self.foods:
-            if self.in_danger_zone(food) and self.health > self.health_threshold:
+            if self.in_danger_zone(food) and self.health > self.health_threshold or force:
                 continue
             if self.no_tails_board.has_node(food):
                 try:
