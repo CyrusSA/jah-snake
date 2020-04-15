@@ -104,7 +104,7 @@ class Game:
     def get_move(self):
         try:
             if self.my_length == 1:
-                return 'up'
+                return self.get_direction((self.board_width, self.board_height))
 
             # Check food case first
             food_destination = self.get_food_destination()
