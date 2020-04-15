@@ -148,7 +148,7 @@ class Game:
         paths = []
         # get shortest path to each food on no_tails_board
         for food in self.foods:
-            if self.in_danger_zone(food) and self.health > self.health_threshold or force:
+            if self.in_danger_zone(food) and self.health > self.health_threshold or not force:
                 continue
             if self.no_tails_board.has_node(food):
                 try:
