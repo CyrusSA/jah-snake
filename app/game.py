@@ -64,7 +64,7 @@ class Game:
                 self.snakes.extend([(point["x"], point["y"]) for point in snake["body"][:(-2 if self.just_ate[snake['id']] else -1)]])
                 x = snake["body"][0]["x"]
                 y = snake["body"][0]["y"]
-                for node in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
+                for node in self.get_adjacent_nodes(x, y):
                     if node not in self.snakes and node not in [self.head, self.tail] and len(snake["body"]) >= self.my_length:
                         self.snakes.append(node)
 
@@ -129,6 +129,11 @@ class Game:
             if food_destination:
                 print "Getting food"
                 return self.get_direction(food_destination)
+
+            finesse_destination = self.get_finesse_destination()
+            if finesse_destination:
+                print "Finessing"
+                return self.get_direction(finesse_destination)
 
             # Random direction (maybe safe, maybe not)
             print "Random move, no errors"
@@ -220,6 +225,23 @@ class Game:
 
         return tail_destination
 
+    def get_finesse_destination(self):
+        finesse_path = []
+        all_adjacent_nodes = [self.get_adjacent_nodes(point['x'], point['y']) for point in reversed(self.game_data['you']['body'][1:(-2 if self.just_ate[self.id] else -1)])]
+        for candidate in [candidate for candidates in all_adjacent_nodes for candidate in candidates if candidate != self.head]:
+            if self.connectivity_board.has_node(candidate):
+                try:
+                    nx.shortest_path(self.no_tails_board, self.head, candidate)
+                    for path in nx.all_simple_paths(self.no_tails_board, self.head, candidate, self.my_length):
+                        if len(path) > len(finesse_path):
+                            finesse_path = path
+                except nx.NetworkXNoPath:
+                    continue
+                if finesse_path:
+                    return finesse_path[1]
+        return None
+
+
     def get_tails(self, enemy_only=False):
         tails = []
         # add the last body point of every snake except me to tails
@@ -250,8 +272,7 @@ class Game:
         self.update_snakes()
         random_move_board = self.update_board(self.extend_and_return(self.snakes, self.get_tails()))
         (x, y) = self.head
-        adjacent_nodes = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
-        for node in adjacent_nodes:
+        for node in self.get_adjacent_nodes(x,y):
             if random_move_board.has_node(node):
                 return node
         # Give up
@@ -272,4 +293,7 @@ class Game:
             if self.get_snake_length(snake["body"]) > self.get_snake_length(longest_snake["body"]):
                 longest_snake = snake
         return longest_snake
+
+    def get_adjacent_nodes(self, x, y):
+        return [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
 
