@@ -125,10 +125,10 @@ class Game:
                 return self.get_direction(enemy_tail_destination)
 
             # If none of the above, force check food
-            food_destination = self.get_food_destination(True)
-            if food_destination:
-                print "Getting food"
-                return self.get_direction(food_destination)
+            # food_destination = self.get_food_destination(True)
+            # if food_destination:
+            #     print "Getting food"
+            #     return self.get_direction(food_destination)
 
             finesse_destination = self.get_finesse_destination()
             if finesse_destination:
@@ -232,9 +232,11 @@ class Game:
             if self.connectivity_board.has_node(candidate):
                 try:
                     nx.shortest_path(self.no_tails_board, self.head, candidate)
-                    desired_path_len = flattened_adjacent_nodes.index(candidate) / 4
+                    component = nx.node_connected_component(self.connectivity_board, candidate)
+                    candidate_index = (flattened_adjacent_nodes.index(candidate) / 4) + 1
                     for path in nx.shortest_simple_paths(self.no_tails_board, self.head, candidate):
-                        if len(path) >= desired_path_len or len(path) == len(nx.node_connected_component(self.connectivity_board, path[-1])) + 1:
+                        desired_path_len = candidate_index + len([food for food in self.foods if food in path]) + 2
+                        if len(path) >= desired_path_len or len(path) == len(component) + 1:
                             return path[1]
                 except nx.NetworkXNoPath:
                     continue
