@@ -227,12 +227,14 @@ class Game:
 
     def get_finesse_destination(self):
         all_adjacent_nodes = [self.get_adjacent_nodes(point['x'], point['y']) for point in reversed(self.game_data['you']['body'][1:(-2 if self.just_ate[self.id] else -1)])]
-        for candidate in [candidate for candidates in all_adjacent_nodes for candidate in candidates if candidate != self.head]:
+        flattened_adjacent_nodes = [candidate for candidates in all_adjacent_nodes for candidate in candidates if candidate != self.head]
+        for candidate in flattened_adjacent_nodes:
             if self.connectivity_board.has_node(candidate):
                 try:
                     nx.shortest_path(self.no_tails_board, self.head, candidate)
+                    desired_path_len = flattened_adjacent_nodes.index(candidate) / 4
                     for path in nx.shortest_simple_paths(self.no_tails_board, self.head, candidate):
-                        if len(path) >= self.my_length or len(path) == len(nx.node_connected_component(self.connectivity_board, path[-1])) + 1:
+                        if len(path) >= desired_path_len or len(path) == len(nx.node_connected_component(self.connectivity_board, path[-1])) + 1:
                             return path[1]
                 except nx.NetworkXNoPath:
                     continue
