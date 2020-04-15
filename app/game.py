@@ -148,7 +148,7 @@ class Game:
         paths = []
         # get shortest path to each food on no_tails_board
         for food in self.foods:
-            if self.in_danger_zone(food) and self.health > self.health_threshold or not force:
+            if self.in_danger_zone(food) and self.health > self.health_threshold and not force:
                 continue
             if self.no_tails_board.has_node(food):
                 try:
@@ -226,19 +226,16 @@ class Game:
         return tail_destination
 
     def get_finesse_destination(self):
-        finesse_path = []
         all_adjacent_nodes = [self.get_adjacent_nodes(point['x'], point['y']) for point in reversed(self.game_data['you']['body'][1:(-2 if self.just_ate[self.id] else -1)])]
         for candidate in [candidate for candidates in all_adjacent_nodes for candidate in candidates if candidate != self.head]:
             if self.connectivity_board.has_node(candidate):
                 try:
                     nx.shortest_path(self.no_tails_board, self.head, candidate)
-                    for path in nx.all_simple_paths(self.no_tails_board, self.head, candidate, self.my_length):
-                        if len(path) > len(finesse_path):
-                            finesse_path = path
+                    for path in nx.shortest_simple_paths(self.no_tails_board, self.head, candidate):
+                        if len(path) >= self.my_length or len(path) == len(nx.node_connected_component(self.connectivity_board, path[-1])) + 1:
+                            return path[1]
                 except nx.NetworkXNoPath:
                     continue
-                if finesse_path:
-                    return finesse_path[1]
         return None
 
 
