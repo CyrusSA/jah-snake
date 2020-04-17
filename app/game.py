@@ -174,16 +174,46 @@ class Game:
         for candidate in flattened_adjacent_nodes:
             if self.connectivity_board.has_node(candidate):
                 try:
-                    nx.shortest_path(self.no_tails_board, self.head, candidate)
-                    component = nx.node_connected_component(self.connectivity_board, candidate)
+                    path = nx.shortest_path(self.no_tails_board, self.head, candidate)
                     candidate_index = (flattened_adjacent_nodes.index(candidate) / 4) + 1
-                    for path in nx.shortest_simple_paths(self.no_tails_board, self.head, candidate):
-                        desired_path_len = candidate_index + len([food for food in self.foods if food in path]) + 2
-                        if len(path) >= desired_path_len or len(path) == len(component) + 1:
-                            return path[1]
+                    component = nx.node_connected_component(self.connectivity_board, candidate)
+                    if len(path) < candidate_index:
+                        return self.kill_time_destination(component, path)
+                    return path[1]
                 except nx.NetworkXNoPath:
                     continue
         return None
+
+
+    def kill_time_destination(self, component, path):
+        component_profile_x = [[n, 0] for n in range(self.board_height)]
+        component_profile_y = component_profile_x[:]
+
+        for (x,y) in component:
+            component_profile_x[x][1] += 1
+            component_profile_y[y][1] += 1
+
+        sort_key = lambda profile : profile[1]
+        component_profile_x.sort(key=sort_key)
+        component_profile_y.sort(key=sort_key)
+
+        gradient = 0
+        for i in range(self.board_height):
+            if component_profile_x[i][1] > component_profile_y[i][1]:
+                break
+            elif component_profile_x[i][1] < component_profile_y[i][1]:
+                gradient = 1
+                break
+
+        if gradient:
+            potential_move = (self.head[0] + 1, self.head[1])
+        else:
+            potential_move = (self.head[0], self.head[1] + 1)
+
+        if self.is_valid_move(potential_move):
+            return potential_move
+
+        return path[1]
 
 
     # get a random step into free space
@@ -201,6 +231,7 @@ class Game:
         return 0 <= move[0] < self.board_width and 0<= move[1] < self.board_height and (
             {'x': move[0], 'y': move[1]} not in [body for bodies in [snake['body'] for snake in self.game_data['board']['snakes']] for body in bodies]
         )
+
 
     # Dont follow closely if target snake just ate
     def tail_chase_detour(self, board, tail_destination, tail, id):
