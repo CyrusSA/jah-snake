@@ -135,8 +135,6 @@ class Game:
 
 
     def tail_destination(self):
-        if not self.connectivity_board.has_node(self.tail):
-            return None
         self.my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)))
         try:
             tail_destination = nx.astar_path(self.my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
