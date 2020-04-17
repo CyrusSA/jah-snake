@@ -188,17 +188,19 @@ class Game:
 
     # get a random step into free space
     def random_destination(self):
-        self.my_length = 99
-        self.update_snakes()
-        random_move_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         (x, y) = self.head
         for node in self.adjacent_nodes(x, y):
-            if random_move_board.has_node(node):
+            if self.is_valid_move(node):
                 return node
         # Give up
         print "give up"
         return (x - 1, y)
 
+
+    def is_valid_move(self, move):
+        return 0 <= move[0] < self.board_width and 0<= move[1] < self.board_height and (
+            {'x': move[0], 'y': move[1]} not in [body for bodies in [snake['body'] for snake in self.game_data['board']['snakes']] for body in bodies]
+        )
 
     # Dont follow closely if target snake just ate
     def tail_chase_detour(self, board, tail_destination, tail, id):
