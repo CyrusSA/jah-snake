@@ -206,12 +206,13 @@ class Game:
                 break
 
         if gradient:
-            potential_move = (self.head[0] + 1, self.head[1])
+            potential_moves = ((self.head[0] + 1, self.head[1]), (self.head[0] - 1, self.head[1]))
         else:
-            potential_move = (self.head[0], self.head[1] + 1)
+            potential_moves = ((self.head[0], self.head[1] + 1), (self.head[0], self.head[1] - 1))
 
-        if self.is_valid_move(potential_move):
-            return potential_move
+        for move in potential_moves:
+            if self.is_valid_move(move):
+                return move
 
         return path[1]
 
