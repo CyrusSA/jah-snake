@@ -29,6 +29,7 @@ class Game:
         self.update_snakes()
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.tails()))
+        self.enemy_heads_board = self.update_board(self.extend_and_remove([(snake['body'][0]['x'], snake['body'][0]['y']) for snake in self.game_data['board']['snakes']]))
 
 
     # Populate self.snakes with snake data, no tails.
@@ -109,6 +110,8 @@ class Game:
         # get shortest path to each food on no_tails_board
         for food in self.foods:
             if self.in_danger_zone(food) and self.health > self.health_threshold and not force:
+                continue
+            if not self.first_to_food(food):
                 continue
             if self.no_tails_board.has_node(food):
                 try:
@@ -276,6 +279,13 @@ class Game:
         return new_list
 
 
+    def extend_and_remove(self, nodes):
+        for node in nodes:
+            if node in self.snakes:
+                self.snakes.remove(node)
+        return self.snakes
+
+
     def calc_just_ate(self):
         for snake in self.game_data['board']['snakes']:
             self.just_ate[snake['id']] = (snake['health'] == 100 and self.game_data["turn"] > 0)
@@ -295,3 +305,12 @@ class Game:
             if self.snake_length(snake["body"]) > self.snake_length(longest_snake["body"]):
                 longest_snake = snake
         return longest_snake
+
+    def first_to_food(self, food):
+        my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
+        for snake in self.game_data['board']['snakes']:
+            x = snake["body"][0]["x"]
+            y = snake["body"][0]["y"]
+            if len(nx.shortest_path(self.enemy_heads_board, (x, y), food)) < my_path_len:
+                return False
+        return True
