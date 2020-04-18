@@ -6,6 +6,7 @@ class Game:
         self.board_height = game_data['board']['height']
         self.board_width = game_data['board']['width']
         self.id = game_data['you']['id']
+        self.shout = game_data['you']['shout']
         self.just_ate = {}
 
         # Distance from center
@@ -88,14 +89,14 @@ class Game:
             for strat in strats:
                 destination = strat()
                 if destination:
-                    print "STRAT:", strat.__name__[:-(len('_destination'))]
+                    self.shout = "STRAT:", strat.__name__[:-(len('_destination'))]
                     return self.direction(destination)
 
             # Random direction (maybe safe, maybe not)
-            print "STRAT: Random move"
+            self.shout = "STRAT: Random move"
             return self.direction(self.random_destination())
         except Exception as e: # Unknown Exception, uh oh
-            print 'Unknown Error: {}'.format(e)
+            self.shout = 'Unknown Error: {}'.format(e)
             return self.direction(self.random_destination())
 
 
@@ -196,7 +197,6 @@ class Game:
             if random_move_board.has_node(node):
                 return node
         # Give up
-        print "give up"
         return (x - 1, y)
 
 
@@ -208,7 +208,6 @@ class Game:
                     tail_destination = path[1]
                     break
             if tail_destination == tail:
-                print "No alternate paths"
                 return None
 
         return tail_destination
