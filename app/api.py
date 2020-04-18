@@ -22,17 +22,20 @@ def start_response(color, headType, tailType):
         })
     )
 
-def move_response(move):
+def move_response(move, shout):
     assert move in ['up', 'down', 'left', 'right'], \
         "Move must be one of [up, down, left, right]"
 
+    assert type(shout) is str, \
+        "Shout value must be string"
     return HTTPResponse(
         status=200,
         headers={
             "Content-Type": "application/json"
         },
         body=json.dumps({
-            "move": move
+            "move": move,
+            "shout": shout
         })
     )
 

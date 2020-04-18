@@ -1,6 +1,5 @@
 import json
 import os
-import random
 import bottle
 from game import Game
 
@@ -44,7 +43,7 @@ def start():
     """
     global game
     game = Game(data)
-    color = "#231AD1"
+    color = "#E42828"
     headType = "dead"
     tailType = "hook"
 
@@ -69,7 +68,7 @@ def move():
 
     game.update_game(data)
 
-    return move_response(game.get_move())
+    return move_response(game.get_move(), game.get_shout())
 
 
 @bottle.post('/end')

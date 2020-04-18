@@ -6,7 +6,6 @@ class Game:
         self.board_height = game_data['board']['height']
         self.board_width = game_data['board']['width']
         self.id = game_data['you']['id']
-        self.shout = game_data['you']['shout']
         self.just_ate = {}
 
         # Distance from center
@@ -23,6 +22,7 @@ class Game:
         self.tail = (self.game_data["you"]["body"][-1]["x"], self.game_data["you"]["body"][-1]["y"])
         self.my_length = self.snake_length(self.game_data["you"]["body"])
         self.health = self.game_data["you"]["health"]
+        self.shout = ""
         self.health_threshold = 100 if self.game_data['turn'] < 30 else 60
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
@@ -78,6 +78,8 @@ class Game:
                 else:
                     board.add_edge(node, current_node)
 
+    def get_shout(self):
+        return self.shout
 
     def get_move(self):
         try:
@@ -89,11 +91,11 @@ class Game:
             for strat in strats:
                 destination = strat()
                 if destination:
-                    self.shout = "STRAT:", strat.__name__[:-(len('_destination'))]
+                    self.shout = "Strat: {}".format(strat.__name__[:-(len('_destination'))])
                     return self.direction(destination)
 
             # Random direction (maybe safe, maybe not)
-            self.shout = "STRAT: Random move"
+            self.shout = "Strat: Random move"
             return self.direction(self.random_destination())
         except Exception as e: # Unknown Exception, uh oh
             self.shout = 'Unknown Error: {}'.format(e)
@@ -175,29 +177,63 @@ class Game:
         for candidate in flattened_adjacent_nodes:
             if self.connectivity_board.has_node(candidate):
                 try:
-                    nx.shortest_path(self.no_tails_board, self.head, candidate)
-                    component = nx.node_connected_component(self.connectivity_board, candidate)
+                    path = nx.shortest_path(self.no_tails_board, self.head, candidate)
                     candidate_index = (flattened_adjacent_nodes.index(candidate) / 4) + 1
-                    for path in nx.shortest_simple_paths(self.no_tails_board, self.head, candidate):
-                        desired_path_len = candidate_index + len([food for food in self.foods if food in path]) + 2
-                        if len(path) >= desired_path_len or len(path) == len(component) + 1:
-                            return path[1]
+                    component = nx.node_connected_component(self.connectivity_board, candidate)
+                    if len(path) < candidate_index:
+                        return self.kill_time_destination(component, path)
+                    return path[1]
                 except nx.NetworkXNoPath:
                     continue
         return None
 
 
+    def kill_time_destination(self, component, path):
+        component_profile_x = [[n, 0] for n in range(self.board_height)]
+        component_profile_y = component_profile_x[:]
+
+        for (x,y) in component:
+            component_profile_x[x][1] += 1
+            component_profile_y[y][1] += 1
+
+        sort_key = lambda profile : profile[1]
+        component_profile_x.sort(key=sort_key)
+        component_profile_y.sort(key=sort_key)
+
+        gradient = 0
+        for i in range(self.board_height):
+            if component_profile_x[i][1] > component_profile_y[i][1]:
+                break
+            elif component_profile_x[i][1] < component_profile_y[i][1]:
+                gradient = 1
+                break
+
+        if gradient:
+            potential_moves = ((self.head[0] + 1, self.head[1]), (self.head[0] - 1, self.head[1]))
+        else:
+            potential_moves = ((self.head[0], self.head[1] + 1), (self.head[0], self.head[1] - 1))
+
+        for move in potential_moves:
+            if self.is_valid_move(move):
+                return move
+
+        return path[1]
+
+
     # get a random step into free space
     def random_destination(self):
-        self.my_length = 99
-        self.update_snakes()
-        random_move_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         (x, y) = self.head
         for node in self.adjacent_nodes(x, y):
-            if random_move_board.has_node(node):
+            if self.is_valid_move(node):
                 return node
         # Give up
         return (x - 1, y)
+
+
+    def is_valid_move(self, move):
+        return 0 <= move[0] < self.board_width and 0<= move[1] < self.board_height and (
+            {'x': move[0], 'y': move[1]} not in [body for bodies in [snake['body'] for snake in self.game_data['board']['snakes']] for body in bodies]
+        )
 
 
     # Dont follow closely if target snake just ate
