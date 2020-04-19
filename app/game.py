@@ -136,7 +136,7 @@ class Game:
                 # path to enemy tail from food
                 for enemy_tail in self.tails(True):
                     try:
-                        connectivity_board_enemy_tails = self.update_board(self.extend_and_return(self.snakes, [self.head, self.tail]))
+                        connectivity_board_enemy_tails = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head])), [self.tail])
                         if nx.shortest_path(connectivity_board_enemy_tails, food_path[-1], enemy_tail):
                             shortest_food_path = food_path
                     except nx.NetworkXNoPath:
@@ -257,7 +257,7 @@ class Game:
     def tail_chase_detour(self, board, tail_destination, tail, id):
         if self.just_ate[id] and tail_destination and tail_destination == tail:
             for path in nx.all_simple_paths(board, self.head, tail, 4):
-                if len(path) > 3:
+                if len(path) > 2:
                     tail_destination = path[1]
                     break
             if tail_destination == tail:
