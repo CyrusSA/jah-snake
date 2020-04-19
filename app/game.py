@@ -29,7 +29,7 @@ class Game:
         self.update_snakes()
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.tails()))
-        self.enemy_heads_board = self.update_board(self.extend_and_remove([(snake['body'][0]['x'], snake['body'][0]['y']) for snake in self.game_data['board']['snakes']]))
+        self.enemy_heads_board = self.update_board(self.remove_and_return(self.snakes, [(snake['body'][0]['x'], snake['body'][0]['y']) for snake in self.game_data['board']['snakes']]))
 
 
     # Populate self.snakes with snake data, no tails.
@@ -111,9 +111,7 @@ class Game:
         for food in self.foods:
             if self.in_danger_zone(food) and self.health > self.health_threshold and not force:
                 continue
-            if not self.first_to_food(food):
-                continue
-            if self.no_tails_board.has_node(food):
+            if self.no_tails_board.has_node(food) and self.first_to_food(food):
                 try:
                     if self.game_data['turn'] < 30:
                         paths.append(nx.shortest_path(self.no_tails_board, self.head, food))
@@ -279,11 +277,11 @@ class Game:
         return new_list
 
 
-    def extend_and_remove(self, nodes):
+    def remove_and_return(self, snakes, nodes):
         for node in nodes:
-            if node in self.snakes:
-                self.snakes.remove(node)
-        return self.snakes
+            if node in snakes:
+                snakes.remove(node)
+        return snakes
 
 
     def calc_just_ate(self):
