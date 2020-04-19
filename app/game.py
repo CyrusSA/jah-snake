@@ -305,10 +305,17 @@ class Game:
         return longest_snake
 
     def first_to_food(self, food):
-        my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
+        try:
+            my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
+        except nx.NetworkXNoPath:
+            return False
+
         for snake in self.game_data['board']['snakes']:
             x = snake["body"][0]["x"]
             y = snake["body"][0]["y"]
-            if len(nx.shortest_path(self.enemy_heads_board, (x, y), food)) < my_path_len:
-                return False
+            try:
+                if len(nx.shortest_path(self.enemy_heads_board, (x, y), food)) < my_path_len:
+                    return False
+            except nx.NetworkXNoPath:
+                continue
         return True
