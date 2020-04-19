@@ -30,6 +30,8 @@ class Game:
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.tails()))
         self.enemy_heads_board = self.update_board(self.remove_and_return(self.snakes, [(snake['body'][0]['x'], snake['body'][0]['y']) for snake in self.game_data['board']['snakes']]))
+        self.my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)))
+        self.connectivity_board_my_tail = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.tails(True)))
 
 
     # Populate self.snakes with snake data, no tails.
@@ -123,8 +125,15 @@ class Game:
         # get and return shortest path to food with a path back to tail, look ahead 1 turn
         for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
-                if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) > self.my_length:
-                    shortest_food_path = food_path
+                if self.my_length < 20:
+                    if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) > self.my_length:
+                        shortest_food_path = food_path
+                else:
+                    try:
+                        nx.shortest_path(self.connectivity_board_my_tail, food_path[-1], self.tail)
+                        shortest_food_path = food_path
+                    except nx.NetworkXNoPath:
+                        continue
         return shortest_food_path[1] if shortest_food_path else None
 
 
@@ -139,7 +148,6 @@ class Game:
 
 
     def tail_destination(self):
-        self.my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)))
         try:
             tail_destination = nx.astar_path(self.my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
         except nx.NetworkXNoPath:
