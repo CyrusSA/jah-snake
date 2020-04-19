@@ -134,13 +134,13 @@ class Game:
                 except nx.NetworkXNoPath:
                     continue
                 # path to enemy tail from food
-                for enemy_tail in self.tails(True):
-                    try:
-                        connectivity_board_enemy_tails = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head])), [self.tail])
-                        if nx.shortest_path(connectivity_board_enemy_tails, food_path[-1], enemy_tail):
-                            shortest_food_path = food_path
-                    except nx.NetworkXNoPath:
-                        continue
+                # for enemy_tail in self.tails(True):
+                #     try:
+                #         connectivity_board_enemy_tails = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head])), [self.tail])
+                #         if nx.shortest_path(connectivity_board_enemy_tails, food_path[-1], enemy_tail):
+                #             shortest_food_path = food_path
+                #     except nx.NetworkXNoPath:
+                #         continue
 
         return shortest_food_path[1] if shortest_food_path else None
 
