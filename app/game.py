@@ -41,9 +41,7 @@ class Game:
             # Add all snakes except me to self.snakes
             if snake["id"] != self.game_data["you"]["id"]:
                 self.snakes.extend([(point["x"], point["y"]) for point in snake["body"][:(-2 if self.just_ate[snake['id']] else -1)]])
-                x = snake["body"][0]["x"]
-                y = snake["body"][0]["y"]
-                for node in self.adjacent_nodes(x, y):
+                for node in self.adjacent_nodes(snake['body'][0]['x'], snake["body"][0]["y"]):
                     if node not in self.snakes and node not in [self.head, self.tail] and len(snake["body"]) >= self.my_length:
                         self.snakes.append(node)
 
@@ -190,7 +188,7 @@ class Game:
 
 
     def finesse_destination(self):
-        all_adjacent_nodes = [self.adjacent_nodes(point['x'], point['y']) for point in reversed(self.game_data['you']['body'][1:(-2 if self.just_ate[self.id] else -1)])]
+        all_adjacent_nodes = [self.adjacent_nodes((point['x'], point['y'])) for point in reversed(self.game_data['you']['body'][1:(-2 if self.just_ate[self.id] else -1)])]
         flattened_adjacent_nodes = [candidate for candidates in all_adjacent_nodes for candidate in candidates if candidate != self.head]
         for candidate in flattened_adjacent_nodes:
             if self.connectivity_board.has_node(candidate):
@@ -240,12 +238,11 @@ class Game:
 
     # get a random step into free space
     def random_destination(self):
-        (x, y) = self.head
-        for node in self.adjacent_nodes(x, y):
+        for node in self.adjacent_nodes(self.head):
             if self.is_valid_move(node):
                 return node
         # Give up
-        return (x - 1, y)
+        return None
 
 
     def is_valid_move(self, move):
@@ -256,7 +253,7 @@ class Game:
 
     # Dont follow closely if target snake just ate
     def tail_chase_detour(self, board, tail_destination, tail, id):
-        if self.just_ate[id] and tail_destination and tail_destination == tail:
+        if self.just_ate[id] and tail_destination and tail_destination == tail and tail in self.adjacent_nodes(self.head):
             for path in nx.all_simple_paths(board, self.head, tail, 4):
                 if len(path) > 3:
                     tail_destination = path[1]
@@ -310,7 +307,8 @@ class Game:
         return len(list(OrderedDict.fromkeys([str(point["x"]) + str(point["y"]) for point in snake])))
 
 
-    def adjacent_nodes(self, x, y):
+    def adjacent_nodes(self, node):
+        x, y = node
         return [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
 
 
