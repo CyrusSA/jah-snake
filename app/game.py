@@ -23,7 +23,7 @@ class Game:
         self.my_length = self.snake_length(self.game_data["you"]["body"])
         self.health = self.game_data["you"]["health"]
         self.shout = ""
-        self.health_threshold = 100 if self.game_data['turn'] < 30 else 60
+        self.health_threshold = 90 if self.game_data['turn'] < 30 else 60
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
