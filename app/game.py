@@ -122,7 +122,7 @@ class Game:
         for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
                 # we fit in connected component to food
-                if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) < self.my_length:
+                if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) > self.my_length:
                     shortest_food_path = food_path
                     continue
                 try:
