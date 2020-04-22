@@ -29,7 +29,7 @@ class Game:
         self.update_snakes()
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()+self.safety_nodes()))
         self.enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]+self.safety_nodes()))
-        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()+self.safety_nodes()))
+        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()))
 
 
     # Populate self.snakes with snake data, no tails.
@@ -130,13 +130,13 @@ class Game:
                 except nx.NetworkXNoPath:
                     pass
                 # path to enemy tail from food
-                for enemy_tail in self.tails(True):
-                    try:
-                        connectivity_board_enemy_tail = self.update_board(self.extend_and_return(self.snakes, [self.head, self.tail]+self.safety_nodes(False)))
-                        if nx.shortest_path(connectivity_board_enemy_tail, food_path[-1], enemy_tail):
-                            shortest_food_path = food_path
-                    except nx.NetworkXNoPath:
-                        pass
+                # for enemy_tail in self.tails(True):
+                #     try:
+                #         connectivity_board_enemy_tail = self.update_board(self.extend_and_return(self.snakes, [self.head, self.tail]+self.safety_nodes(False)))
+                #         if nx.shortest_path(connectivity_board_enemy_tail, food_path[-1], enemy_tail):
+                #             shortest_food_path = food_path
+                #     except nx.NetworkXNoPath:
+                #         pass
         if shortest_food_path:
             self.shout += 'food at {} '.format(shortest_food_path[-1])
             return shortest_food_path[1]
@@ -249,8 +249,11 @@ class Game:
     # Return true if we are closest to food
     def first_to_food(self, food):
         try:
+            # has_head = self.head in self.no_tails_board
+            # has_food = food in self.no_tails_board
             my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
-        except nx.NetworkXNoPath:
+        except nx.NetworkXNoPath as e:
+            # print e
             return False
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
