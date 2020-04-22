@@ -91,6 +91,7 @@ class Game:
                 destination = strat()
                 if destination:
                     self.shout = "Strat: {}".format(strat.__name__[:-(len('_destination'))])
+                    print destination
                     return self.direction(destination)
 
             # Random direction (maybe safe, maybe not)
@@ -197,15 +198,17 @@ class Game:
                     path = nx.shortest_path(self.no_tails_board, self.head, candidate)
                     candidate_index = (flattened_adjacent_nodes.index(candidate) / 4) + 1
                     component = nx.node_connected_component(self.connectivity_board, candidate)
+                    if len(component) < candidate_index:
+                        continue
                     if len(path) < candidate_index:
-                        return self.kill_time_destination(component, path)
+                        return self.kill_time_destination(component, path, candidate_index)
                     return path[1]
                 except nx.NetworkXNoPath:
                     continue
         return None
 
 
-    def kill_time_destination(self, component, path):
+    def kill_time_destination(self, component, path, candidate_index):
         component_profile_x = [[n, 0] for n in range(self.board_height)]
         component_profile_y = component_profile_x[:]
 
@@ -231,7 +234,7 @@ class Game:
             potential_moves = ((self.head[0], self.head[1] + 1), (self.head[0], self.head[1] - 1))
 
         for move in potential_moves:
-            if self.is_valid_move(move):
+            if self.is_valid_move(move) and len(nx.node_connected_component(self.connectivity_board, move)) >= candidate_index:
                 return move
 
         return path[1]
