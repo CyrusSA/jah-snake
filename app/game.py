@@ -1,5 +1,6 @@
 import networkx as nx
 from collections import OrderedDict
+import traceback
 
 class Game:
     def __init__(self, game_data):
@@ -96,6 +97,7 @@ class Game:
             return self.direction(self.random_destination())
         except Exception as e: # Unknown Exception, uh oh
             self.shout = 'Unknown Error: {}'.format(e)
+            print traceback.format_exc()
             return self.direction(self.random_destination())
 
 
