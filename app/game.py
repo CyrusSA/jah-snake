@@ -110,7 +110,9 @@ class Game:
             board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, enemy_heads + self.safety_nodes_all), [self.head, move]))
             for head in enemy_heads:
                 for snake in self.game_data['board']['snakes']:
-                    if head in snake:
+                    x, y = head
+                    dict_head = {'y': y, 'x': x}
+                    if dict_head in snake['body']:
                         if len(nx.node_connected_component(board, head)) < self.snake_length(snake):
                             kill_moves.extend(move)
         return kill_moves
