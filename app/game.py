@@ -114,12 +114,13 @@ class Game:
                     continue
 
         # get and return shortest path to food with a path back to tail, look ahead 1 turn
-        tail_connectivity_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True) + self.safety_nodes(False) + [self.head]))
+        tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, self.safety_nodes(False) + [self.head]))
         for food_path in paths:
-            if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0 and food in tail_connectivity_board:
-                food_connected_component = nx.node_connected_component(tail_connectivity_board, food_path[-1])
-                if self.tail in food_connected_component:
-                    shortest_food_path = food_path
+            if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0 and food in tails_connectivity_board:
+                food_connected_component = nx.node_connected_component(tails_connectivity_board, food_path[-1])
+                for tail in self.tails():
+                    if tail in food_connected_component:
+                        shortest_food_path = food_path
 
         if shortest_food_path:
             self.shout += 'food at {} '.format(shortest_food_path[-1])
