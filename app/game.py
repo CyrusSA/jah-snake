@@ -5,7 +5,6 @@ class Game:
     def __init__(self, game_data):
         self.board_height = game_data['board']['height']
         self.board_width = game_data['board']['width']
-        self.id = game_data['you']['id']
         self.just_ate = {}
 
         # Distance from center
@@ -18,6 +17,7 @@ class Game:
     # Updates game state with data from /move request.
     def update_game(self, game_data):
         self.game_data = game_data
+        self.id = game_data['you']['id']
         self.head = (self.game_data["you"]["body"][0]["x"], self.game_data["you"]["body"][0]["y"])
         self.tail = (self.game_data["you"]["body"][-1]["x"], self.game_data["you"]["body"][-1]["y"])
         self.my_length = self.snake_length(self.game_data["you"]["body"])
@@ -79,7 +79,7 @@ class Game:
     def get_move(self):
         try:
             if self.my_length == 1:
-                return self.direction((self.board_width, self.board_height))
+                return self.direction((self.board_width/2, self.board_height/2))
 
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
 
@@ -121,22 +121,15 @@ class Game:
                 if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) > self.my_length:
                     shortest_food_path = food_path
                     continue
-                # try:
-                #     # path from food to our tail
-                #     safe_board_my_tail = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails(True)+self.safety_nodes(False)))
-                #     if nx.shortest_path(safe_board_my_tail, food_path[-1], self.tail):
-                #         shortest_food_path = food_path
-                #         continue
-                # except nx.NetworkXNoPath:
-                #     pass
-                # path to enemy tail from food
-                # for enemy_tail in self.tails(True):
-                #     try:
-                #         connectivity_board_enemy_tail = self.update_board(self.extend_and_return(self.snakes, [self.head, self.tail]+self.safety_nodes(False)))
-                #         if nx.shortest_path(connectivity_board_enemy_tail, food_path[-1], enemy_tail):
-                #             shortest_food_path = food_path
-                #     except nx.NetworkXNoPath:
-                #         pass
+                try:
+                    # path from food to our tail
+                    safe_board_my_tail = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails(True)+self.safety_nodes(False)))
+                    if nx.shortest_path(safe_board_my_tail, food_path[-1], self.tail):
+                        shortest_food_path = food_path
+                        continue
+                except nx.NetworkXNoPath:
+                    pass
+
         if shortest_food_path:
             self.shout += 'food at {} '.format(shortest_food_path[-1])
             return shortest_food_path[1]
@@ -196,15 +189,17 @@ class Game:
                     path = nx.shortest_path(self.no_tails_board, self.head, candidate)
                     candidate_index = (flattened_adjacent_nodes.index(candidate) / 4) + 1
                     component = nx.node_connected_component(self.connectivity_board, candidate)
+                    if len(component) < candidate_index:
+                        continue
                     if len(path) < candidate_index:
-                        return self.kill_time_destination(component, path)
+                        return self.kill_time_destination(component, path, candidate_index)
                     return path[1]
                 except nx.NetworkXNoPath:
                     continue
         return None
 
 
-    def kill_time_destination(self, component, path):
+    def kill_time_destination(self, component, path, candidate_index):
         component_profile_x = [[n, 0] for n in range(self.board_height)]
         component_profile_y = component_profile_x[:]
 
@@ -230,7 +225,7 @@ class Game:
             potential_moves = ((self.head[0], self.head[1] + 1), (self.head[0], self.head[1] - 1))
 
         for move in potential_moves:
-            if self.is_valid_move(move):
+            if self.is_valid_move(move) and len(nx.node_connected_component(self.connectivity_board, move)) >= candidate_index:
                 return move
 
         return path[1]
@@ -338,28 +333,3 @@ class Game:
                         if node not in self.snakes and node not in [self.head, self.tail]:
                             safety_nodes.append(node)
         return safety_nodes
-
-
-    # Return true if we are closest to food
-    #     # def first_to_food(self, food):
-    #     try:
-    #         # has_head = self.head in self.no_tails_board
-    #         # has_food = food in self.no_tails_board
-    #         my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
-    #     except nx.NetworkXNoPath as e:
-    #         # print e
-    #         return False
-    #     for snake in self.game_data['board']['snakes']:
-    #         if snake['id'] != self.id:
-    #             enemy_head = (snake['body'][0]['x'], snake['body'][0]['y'])
-    #             enemy_heads_board = self.update_board(self.remove_and_return(self.snakes, [enemy_head]))
-    #             try:
-    #                 if self.longest_snake() == self.id:
-    #                     if len(nx.shortest_path(enemy_heads_board, enemy_head, food)) < my_path_len:
-    #                         return False
-    #                 else:
-    #                     if len(nx.shortest_path(enemy_heads_board, enemy_head, food)) <= my_path_len:
-    #                         return False
-    #             except nx.NetworkXNoPath:
-    #                 continue
-    #     return True
