@@ -5,7 +5,6 @@ class Game:
     def __init__(self, game_data):
         self.board_height = game_data['board']['height']
         self.board_width = game_data['board']['width']
-        self.id = game_data['you']['id']
         self.just_ate = {}
 
         # Distance from center
@@ -18,6 +17,7 @@ class Game:
     # Updates game state with data from /move request.
     def update_game(self, game_data):
         self.game_data = game_data
+        self.id = game_data['you']['id']
         self.head = (self.game_data["you"]["body"][0]["x"], self.game_data["you"]["body"][0]["y"])
         self.tail = (self.game_data["you"]["body"][-1]["x"], self.game_data["you"]["body"][-1]["y"])
         self.my_length = self.snake_length(self.game_data["you"]["body"])
