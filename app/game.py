@@ -23,7 +23,7 @@ class Game:
         self.my_length = self.snake_length(self.game_data["you"]["body"])
         self.health = self.game_data["you"]["health"]
         self.shout = ""
-        self.health_threshold = 90 if self.game_data['turn'] < 30 else 60
+        self.health_threshold = 99 if self.game_data['turn'] < 30 else 60
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
@@ -113,10 +113,9 @@ class Game:
                 except nx.NetworkXNoPath:
                     continue
 
-        # get and return shortest path to food with a path back to tail, look ahead 1 turn
         tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, self.safety_nodes(False) + [self.head]))
         for food_path in paths:
-            if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0 and food in tails_connectivity_board:
+            if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0 and food_path[-1] in tails_connectivity_board:
                 food_connected_component = nx.node_connected_component(tails_connectivity_board, food_path[-1])
                 for tail in self.tails():
                     if tail in food_connected_component:
