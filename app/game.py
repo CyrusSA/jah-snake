@@ -28,8 +28,7 @@ class Game:
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()+self.safety_nodes()))
-        self.enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]+self.safety_nodes()))
-        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()))
+        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()+self.safety_nodes()))
 
 
     # Populate self.snakes with snake data, no tails.
@@ -151,13 +150,14 @@ class Game:
 
 
     def enemy_tail_destination(self):
+        enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]+self.safety_nodes()))
         # remove tail with no path
         enemy_tail_paths = []
         for tail in self.tails(True):
-            if not self.enemy_tails_board.has_node(tail):
+            if not enemy_tails_board.has_node(tail):
                 continue
             try:
-                enemy_tail_paths.append(nx.astar_path(self.enemy_tails_board, self.head, tail, self.astar_heuristic))
+                enemy_tail_paths.append(nx.astar_path(enemy_tails_board, self.head, tail, self.astar_heuristic))
             except nx.NetworkXNoPath:
                 pass
         # find and return shortest path
@@ -170,7 +170,7 @@ class Game:
         if not shortest_path:
             return None
         enemy_id = [snake for snake in self.game_data['board']['snakes'] if snake['body'][-1]['x'] == shortest_path[-1][0] and snake['body'][-1]['y'] == shortest_path[-1][1]][0]['id']
-        return self.tail_chase_detour(self.enemy_tails_board, shortest_path[1], shortest_path[-1], enemy_id)
+        return self.tail_chase_detour(enemy_tails_board, shortest_path[1], shortest_path[-1], enemy_id)
 
 
     def finesse_destination(self):
