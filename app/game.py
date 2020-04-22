@@ -27,6 +27,7 @@ class Game:
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
+        self.safety_nodes = self.return_safety_nodes
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()+self.safety_nodes()))
         self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()+self.safety_nodes()))
 
@@ -82,11 +83,13 @@ class Game:
 
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
 
-            for strat in strats:
-                destination = strat()
-                if destination:
-                    self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
-                    return self.direction(destination)
+            for _ in range(2):
+                for strat in strats:
+                    destination = strat()
+                    if destination:
+                        self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
+                        return self.direction(destination)
+                self.safety_nodes = self.empty_list
 
             # Random direction (maybe safe, maybe not)
             self.shout = "Strat: Random move"
@@ -314,7 +317,7 @@ class Game:
         return self.shout
 
     # Return a list of nodes adjacent to the heads of enemy snakes
-    def safety_nodes(self, only_bigger=True):
+    def return_safety_nodes(self, only_bigger=True):
         safety_nodes = []
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
@@ -326,3 +329,6 @@ class Game:
                         if node not in self.snakes and node not in [self.head]:
                             safety_nodes.append(node)
         return safety_nodes
+
+    def empty_list(self, optional=False):
+        return []
