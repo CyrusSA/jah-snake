@@ -27,9 +27,9 @@ class Game:
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
-        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
-        self.enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]))
-        self.connectivity_board = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.tails()))
+        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()+self.safety_nodes()))
+        self.enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]+self.safety_nodes()))
+        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()+self.safety_nodes()))
 
 
     # Populate self.snakes with snake data, no tails.
@@ -38,15 +38,13 @@ class Game:
     def update_snakes(self):
         self.snakes = []
         for snake in self.game_data["board"]["snakes"]:
-            # Add all snakes except me to self.snakes
-            if snake["id"] != self.game_data["you"]["id"]:
+            # Add all snakes except us to self.snakes
+            if snake["id"] != self.id:
                 self.snakes.extend([(point["x"], point["y"]) for point in snake["body"][:(-2 if self.just_ate[snake['id']] else -1)]])
-                for node in self.adjacent_nodes((snake['body'][0]['x'], snake["body"][0]["y"])):
-                    if node not in self.snakes and node not in [self.head, self.tail] and len(snake["body"]) >= self.my_length:
-                        self.snakes.append(node)
-
+        # First turns edge case
         if self.game_data["turn"] == 0 or self.game_data["turn"] == 1:
             return
+        # Add ourselves to self.snakes except head and tail
         self.snakes.extend([(point["x"], point["y"]) for point in self.game_data["you"]["body"][1:(-2 if self.just_ate[self.id] else -1)] if point not in self.snakes])
 
 
@@ -77,8 +75,6 @@ class Game:
                 else:
                     board.add_edge(node, current_node)
 
-    def get_shout(self):
-        return self.shout
 
     def get_move(self):
         try:
@@ -250,6 +246,28 @@ class Game:
         return x-1, y
 
 
+    # Return true if we are closest to food
+    def first_to_food(self, food):
+        try:
+            my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
+        except nx.NetworkXNoPath:
+            return False
+        for snake in self.game_data['board']['snakes']:
+            if snake['id'] != self.id:
+                enemy_head = (snake['body'][0]['x'], snake['body'][0]['y'])
+                enemy_heads_board = self.update_board(self.remove_and_return(self.snakes, [enemy_head]))
+                try:
+                    if self.longest_snake() == self.id:
+                        if len(nx.shortest_path(enemy_heads_board, enemy_head, food)) < my_path_len:
+                            return False
+                    else:
+                        if len(nx.shortest_path(enemy_heads_board, enemy_head, food)) <= my_path_len:
+                            return False
+                except nx.NetworkXNoPath:
+                    continue
+        return True
+
+
     def is_valid_move(self, move):
         return 0 <= move[0] < self.board_width and 0<= move[1] < self.board_height and (
             {'x': move[0], 'y': move[1]} not in [body for bodies in [snake['body'] for snake in self.game_data['board']['snakes']] for body in bodies]
@@ -291,17 +309,17 @@ class Game:
 
 
     def extend_and_return(self, snakes, extension):
-        new_snakes = snakes[:]
-        new_snakes.extend(extension)
-        return new_snakes
+        snakes_copy = snakes[:]
+        snakes_copy.extend(extension)
+        return snakes_copy
 
 
     def remove_and_return(self, snakes, nodes):
-        new_snakes = snakes[:]
+        snakes_copy = snakes[:]
         for node in nodes:
-            if node in new_snakes:
-                new_snakes.remove(node)
-        return new_snakes
+            if node in snakes_copy:
+                snakes_copy.remove(node)
+        return snakes_copy
 
 
     def calc_just_ate(self):
@@ -325,26 +343,20 @@ class Game:
                 longest_snake = snake
         return longest_snake['id']
 
-    def first_to_food(self, food):
-        try:
-            my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
-        except nx.NetworkXNoPath:
-            return False
 
+    def get_shout(self):
+        return self.shout
+
+    # Return a list of nodes adjacent to the heads of enemy snakes
+    def safety_nodes(self, only_bigger=True):
+        safety_nodes = []
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
-                enemy_nodes = [(snake['body'][0]['x'], snake['body'][0]['y'])]
-                for node in self.adjacent_nodes(enemy_nodes[0]):
-                    if node not in [(point['x'], point['y']) for point in snake['body']]:
-                        enemy_nodes.append(node)
-                enemy_heads_board = self.update_board(self.remove_and_return(self.snakes, enemy_nodes))
-                try:
-                    if self.longest_snake() == self.id:
-                        if len(nx.shortest_path(enemy_heads_board, enemy_nodes[0], food)) < my_path_len:
-                            return False
+                for node in self.adjacent_nodes((snake['body'][0]['x'], snake["body"][0]["y"])):
+                    if only_bigger:
+                        if node not in self.snakes and node not in [self.head, self.tail] and len(snake["body"]) >= self.my_length:
+                            safety_nodes.append(node)
                     else:
-                        if len(nx.shortest_path(enemy_heads_board, enemy_nodes[0], food)) <= my_path_len:
-                            return False
-                except nx.NetworkXNoPath:
-                    continue
-        return True
+                        if node not in self.snakes and node not in [self.head, self.tail]:
+                            safety_nodes.append(node)
+        return safety_nodes
