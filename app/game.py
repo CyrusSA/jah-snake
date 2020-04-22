@@ -118,7 +118,7 @@ class Game:
 
         tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, self.safety_nodes(False) + [self.head]))
         for food_path in paths:
-            if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0 and food_path[-1] in tails_connectivity_board:
+            if (len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0) and food_path[-1] in tails_connectivity_board:
                 food_connected_component = nx.node_connected_component(tails_connectivity_board, food_path[-1])
                 for tail in self.tails():
                     if tail in food_connected_component:
@@ -319,16 +319,44 @@ class Game:
     # Return a list of nodes adjacent to the heads of enemy snakes
     def return_safety_nodes(self, only_bigger=True):
         safety_nodes = []
+        edge_snake = False
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
-                for node in self.adjacent_nodes((snake['body'][0]['x'], snake["body"][0]["y"])):
-                    if only_bigger:
-                        if node not in self.snakes and node not in [self.head] and len(snake["body"]) >= self.my_length:
-                            safety_nodes.append(node)
-                    else:
-                        if node not in self.snakes and node not in [self.head]:
-                            safety_nodes.append(node)
+                head = (snake['body'][0]['x'], snake["body"][0]["y"])
+                edge_snake = self.is_edge_point(head)
+                for node in self.adjacent_nodes(head):
+                    if node not in self.snakes and node not in [self.head] and ((len(snake["body"]) >= self.my_length or not only_bigger) or edge_snake):
+                        safety_nodes.append(node)
         return safety_nodes
+
+    def is_edge_point(self, head):
+        x,y = head
+        helper = lambda x,y : (x == self.danger_zone_upper or x == self.danger_zone_lower) and self.danger_zone_lower <= y <= self.danger_zone_upper
+        return helper(x,y) and helper(y,x)
 
     def empty_list(self, optional=False):
         return []
+
+    # Return true if we are closest to food
+    #     # def first_to_food(self, food):
+    #     try:
+    #         # has_head = self.head in self.no_tails_board
+    #         # has_food = food in self.no_tails_board
+    #         my_path_len = len(nx.shortest_path(self.no_tails_board, self.head, food))
+    #     except nx.NetworkXNoPath as e:
+    #         # print e
+    #         return False
+    #     for snake in self.game_data['board']['snakes']:
+    #         if snake['id'] != self.id:
+    #             enemy_head = (snake['body'][0]['x'], snake['body'][0]['y'])
+    #             enemy_heads_board = self.update_board(self.remove_and_return(self.snakes, [enemy_head]))
+    #             try:
+    #                 if self.longest_snake() == self.id:
+    #                     if len(nx.shortest_path(enemy_heads_board, enemy_head, food)) < my_path_len:
+    #                         return False
+    #                 else:
+    #                     if len(nx.shortest_path(enemy_heads_board, enemy_head, food)) <= my_path_len:
+    #                         return False
+    #             except nx.NetworkXNoPath:
+    #                 continue
+    #     return True
