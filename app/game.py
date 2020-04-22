@@ -27,9 +27,10 @@ class Game:
         self.calc_just_ate()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
-        self.safety_nodes = self.return_safety_nodes
-        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()+self.safety_nodes()))
-        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()+self.safety_nodes()))
+        self.safety_nodes_longer = self.return_safety_nodes(True)
+        self.safety_nodes_all = self.return_safety_nodes(False)
+        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
+        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()))
 
 
     # Populate self.snakes with snake data, no tails.
@@ -116,7 +117,7 @@ class Game:
                 except nx.NetworkXNoPath:
                     continue
 
-        tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, self.safety_nodes(False) + [self.head]))
+        tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head], True, False))
         for food_path in paths:
             if (len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0) and food_path[-1] in tails_connectivity_board:
                 food_connected_component = nx.node_connected_component(tails_connectivity_board, food_path[-1])
@@ -142,7 +143,7 @@ class Game:
 
 
     def tail_destination(self):
-        my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)+self.safety_nodes()))
+        my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)))
         if self.tail in my_tail_board:
             try:
                 tail_destination = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
@@ -153,7 +154,7 @@ class Game:
 
 
     def enemy_tail_destination(self):
-        enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]+self.safety_nodes()))
+        enemy_tails_board = self.update_board(self.extend_and_return(self.snakes, [self.tail]))
         # remove tail with no path
         enemy_tail_paths = []
         for tail in self.tails(True):
@@ -277,9 +278,15 @@ class Game:
         return 'right'
 
 
-    def extend_and_return(self, snakes, extension):
+    # add nodes to a copy of snakes and return it
+    def extend_and_return(self, snakes, extension, safety=True, longer_only=True):
         snakes_copy = snakes[:]
         snakes_copy.extend(extension)
+        if safety:
+            if longer_only:
+                snakes_copy.extend(self.safety_nodes_longer)
+            else:
+                snakes_copy.extend(self.safety_nodes_all)
         return snakes_copy
 
 
@@ -317,7 +324,7 @@ class Game:
         return self.shout
 
     # Return a list of nodes adjacent to the heads of enemy snakes
-    def return_safety_nodes(self, only_bigger=True):
+    def return_safety_nodes(self, longer_only):
         safety_nodes = []
         edge_snake = False
         for snake in self.game_data['board']['snakes']:
@@ -325,7 +332,7 @@ class Game:
                 head = (snake['body'][0]['x'], snake["body"][0]["y"])
                 edge_snake = self.is_edge_point(head)
                 for node in self.adjacent_nodes(head):
-                    if node not in self.snakes and node not in [self.head] and ((len(snake["body"]) >= self.my_length or not only_bigger) or edge_snake):
+                    if node not in self.snakes and node not in [self.head] and ((len(snake["body"]) >= self.my_length or not longer_only) or edge_snake):
                         safety_nodes.append(node)
         return safety_nodes
 
