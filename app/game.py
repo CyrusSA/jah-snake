@@ -83,7 +83,7 @@ class Game:
     def get_move(self):
         try:
             if self.my_length == 1:
-                return self.direction((self.board_width, self.board_height))
+                return self.direction((self.board_width/2, self.board_height/2))
 
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
 
