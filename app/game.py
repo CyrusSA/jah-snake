@@ -187,7 +187,7 @@ class Game:
                     component = nx.node_connected_component(self.connectivity_board, candidate)
                     if len(component) < candidate_index:
                         continue
-                    if len(path) < candidate_index:
+                    if len(path) - 1 < candidate_index:
                         return self.kill_time_destination(component, path, candidate_index)
                     return path[1]
                 except nx.NetworkXNoPath:
