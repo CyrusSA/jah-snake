@@ -123,7 +123,7 @@ class Game:
                     continue
                 try:
                     # path from food to our tail
-                    safe_board_my_tail = self.update_board(self.extend_and_return(self.extend_and_return(self.snakes, [self.head]), self.tails(True)))
+                    safe_board_my_tail = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails(True)+self.safety_nodes(False)))
                     if nx.shortest_path(safe_board_my_tail, food_path[-1], self.tail):
                         shortest_food_path = food_path
                         continue
@@ -132,7 +132,7 @@ class Game:
                 # path to enemy tail from food
                 for enemy_tail in self.tails(True):
                     try:
-                        connectivity_board_enemy_tail = self.update_board(self.extend_and_return(self.snakes, [self.head, self.tail]))
+                        connectivity_board_enemy_tail = self.update_board(self.extend_and_return(self.snakes, [self.head, self.tail]+self.safety_nodes(False)))
                         if nx.shortest_path(connectivity_board_enemy_tail, food_path[-1], enemy_tail):
                             shortest_food_path = food_path
                     except nx.NetworkXNoPath:
@@ -155,7 +155,7 @@ class Game:
 
 
     def tail_destination(self):
-        my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)))
+        my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)+self.safety_nodes()))
         try:
             tail_destination = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
         except nx.NetworkXNoPath:
