@@ -107,13 +107,13 @@ class Game:
         kill_moves = []
         enemy_heads = [(snake['body'][0]['x'], snake['body'][0]['y']) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
         for move in next_moves:
-            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, enemy_heads + self.safety_nodes_all), [self.head, move]))
+            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, enemy_heads), [self.head, move]))
             for head in enemy_heads:
                 for snake in self.game_data['board']['snakes']:
                     x, y = head
                     dict_head = {'y': y, 'x': x}
                     if dict_head in snake['body']:
-                        if len(nx.node_connected_component(board, head)) < self.snake_length(snake):
+                        if len(nx.node_connected_component(board, head)) < self.snake_length(snake['body']):
                             kill_moves.extend(move)
         return kill_moves
 
