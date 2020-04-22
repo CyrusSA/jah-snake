@@ -319,16 +319,20 @@ class Game:
     # Return a list of nodes adjacent to the heads of enemy snakes
     def return_safety_nodes(self, only_bigger=True):
         safety_nodes = []
+        edge_snake = False
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
-                for node in self.adjacent_nodes((snake['body'][0]['x'], snake["body"][0]["y"])):
-                    if only_bigger:
-                        if node not in self.snakes and node not in [self.head] and len(snake["body"]) >= self.my_length:
-                            safety_nodes.append(node)
-                    else:
-                        if node not in self.snakes and node not in [self.head]:
-                            safety_nodes.append(node)
+                head = (snake['body'][0]['x'], snake["body"][0]["y"])
+                edge_snake = self.is_edge_point(head)
+                for node in self.adjacent_nodes(head):
+                    if node not in self.snakes and node not in [self.head] and ((len(snake["body"]) >= self.my_length or not only_bigger) or edge_snake):
+                        safety_nodes.append(node)
         return safety_nodes
+
+    def is_edge_point(self, head):
+        x,y = head
+        helper = lambda x,y : (x == self.danger_zone_upper or x == self.danger_zone_lower) and self.danger_zone_lower <= y <= self.danger_zone_upper
+        return helper(x,y) and helper(y,x)
 
     def empty_list(self, optional=False):
         return []
