@@ -115,20 +115,13 @@ class Game:
                     continue
 
         # get and return shortest path to food with a path back to tail, look ahead 1 turn
+        tail_connectivity_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True) + self.safety_nodes(True) + [self.head]))
         for food_path in paths:
             if len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0:
-                # we fit in connected component to food
-                if len(nx.node_connected_component(self.connectivity_board, food_path[-1])) > self.my_length:
-                    shortest_food_path = food_path
-                    continue
-                try:
-                    # path from food to our tail
-                    safe_board_my_tail = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails(True)+self.safety_nodes(False)))
-                    if nx.shortest_path(safe_board_my_tail, food_path[-1], self.tail):
+                if food in tail_connectivity_board:
+                    food_connected_component = nx.node_connected_component(tail_connectivity_board, food_path[-1])
+                    if self.tail in food_connected_component:
                         shortest_food_path = food_path
-                        continue
-                except nx.NetworkXNoPath:
-                    pass
 
         if shortest_food_path:
             self.shout += 'food at {} '.format(shortest_food_path[-1])
