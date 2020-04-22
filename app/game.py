@@ -141,12 +141,13 @@ class Game:
 
     def tail_destination(self):
         my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)+self.safety_nodes()))
-        try:
-            tail_destination = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
-        except nx.NetworkXNoPath:
-            return None
-
-        return self.tail_chase_detour(my_tail_board, tail_destination, self.tail, self.id)
+        if self.tail in my_tail_board:
+            try:
+                tail_destination = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
+                return self.tail_chase_detour(my_tail_board, tail_destination, self.tail, self.id)
+            except nx.NetworkXNoPath:
+                pass
+        return None
 
 
     def enemy_tail_destination(self):
@@ -319,9 +320,9 @@ class Game:
             if snake['id'] != self.id:
                 for node in self.adjacent_nodes((snake['body'][0]['x'], snake["body"][0]["y"])):
                     if only_bigger:
-                        if node not in self.snakes and node not in [self.head, self.tail] and len(snake["body"]) >= self.my_length:
+                        if node not in self.snakes and node not in [self.head] and len(snake["body"]) >= self.my_length:
                             safety_nodes.append(node)
                     else:
-                        if node not in self.snakes and node not in [self.head, self.tail]:
+                        if node not in self.snakes and node not in [self.head]:
                             safety_nodes.append(node)
         return safety_nodes
