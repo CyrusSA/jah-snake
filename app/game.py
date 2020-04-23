@@ -123,13 +123,15 @@ class Game:
 
     # Return next moves that cut off enemy snakes
     def cut_off_destinations(self):
+        if self.my_length==1:
+            return []
         next_moves = [node for node in self.adjacent_nodes(self.head) if node not in self.snakes and node in self.connectivity_board]
         kill_moves = []
         # list of tuples (snake head, snake length) of enemy snakes
         enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), self.snake_length(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
         for move in next_moves:
-            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for (head, length) in enemy_snakes]), [self.head, move]))
-            for (head, length) in enemy_snakes:
+            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head, move]))
+            for head, length in enemy_snakes:
                 if len(nx.node_connected_component(board, head)) < length:
                     kill_moves.append(move)
         return kill_moves
