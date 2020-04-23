@@ -7,13 +7,21 @@ class Game:
         self.board_height = game_data['board']['height']
         self.board_width = game_data['board']['width']
         self.just_ate = {}
+        self.kill_moves = []
 
         # Distance from center
         center = (self.board_width/2, self.board_height/2)
-        self.astar_heuristic = lambda n1, n2 : sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (n1, n2)])
+        self.astar_heuristic = lambda curr, target : sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)]) + (-100 if curr in self.kill_moves else 0)
 
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
+
+
+    @staticmethod
+    def astar_heuristic_test(curr, target):
+        center = (5,5)
+        return sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)]) + (
+        -100 if curr in [(8,6)] else 0)
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -116,7 +124,7 @@ class Game:
                     dict_head = {'y': y, 'x': x}
                     if dict_head in snake['body']:
                         if len(nx.node_connected_component(board, head)) < self.snake_length(snake['body']):
-                            kill_moves.extend(move)
+                            kill_moves.append(move)
         return kill_moves
 
 
