@@ -180,7 +180,7 @@ class Game:
         if self.tail in my_tail_board:
             try:
                 tail_destination = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
-                return self.tail_chase_detour(my_tail_board, tail_destination, self.tail, self.id)
+                return self.tail_chase_detour(my_tail_board, tail_destination, self.tail, self.just_ate[self.id])
             except nx.NetworkXNoPath:
                 pass
         return None
@@ -206,8 +206,7 @@ class Game:
                     shortest_path = path
         if not shortest_path:
             return None
-        enemy_id = [snake for snake in self.game_data['board']['snakes'] if snake['body'][-1]['x'] == shortest_path[-1][0] and snake['body'][-1]['y'] == shortest_path[-1][1]][0]['id']
-        return self.tail_chase_detour(enemy_tails_board, shortest_path[1], shortest_path[-1], enemy_id)
+        return self.tail_chase_detour(enemy_tails_board, shortest_path[1], shortest_path[-1])
 
 
     def finesse_destination(self):
@@ -277,14 +276,15 @@ class Game:
         )
 
 
-    # Dont follow closely if target snake just ate
-    def tail_chase_detour(self, board, tail_destination, tail, id):
-        if self.just_ate[id] and tail_destination and tail_destination == tail:
+    # Dont follow closely if condition is true
+    def tail_chase_detour(self, board, tail_destination, tail, condition=True):
+        if condition and tail_destination and tail_destination == tail:
             for path in nx.all_simple_paths(board, self.head, tail, 4):
                 if len(path) > 2:
                     tail_destination = path[1]
                     break
-            if tail_destination == tail:
+            # Have eaten for sure, will die if continue chasing tail
+            if tail_destination == tail and tail == self.tail:
                 return None
 
         return tail_destination
