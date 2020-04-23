@@ -93,14 +93,24 @@ class Game:
                 return self.direction((self.board_width/2, self.board_height/2))
 
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
+            # Try strats in order with safety nodes
+            for strat in strats:
+                destination = strat()
+                if destination:
+                    self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
+                    return self.direction(destination)
 
-            for _ in range(2):
-                for strat in strats:
-                    destination = strat()
-                    if destination:
-                        self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
-                        return self.direction(destination)
-                self.safety_nodes = self.empty_list
+            # generate boards without safety nodes
+            self.safety_nodes_all = self.safety_nodes_longer = []
+            self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
+            self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
+
+            # Try strats in order without safety nodes
+            for strat in strats:
+                destination = strat()
+                if destination:
+                    self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
+                    return self.direction(destination)
 
             # Random direction (maybe safe, maybe not)
             self.shout = "Strat: Random move"
@@ -113,7 +123,7 @@ class Game:
 
     # Return next moves that cut off enemy snakes
     def cut_off_destinations(self):
-        next_moves = [node for node in self.adjacent_nodes(self.head) if node not in self.snakes]
+        next_moves = [node for node in self.adjacent_nodes(self.head) if node not in self.snakes and node in self.connectivity_board]
         kill_moves = []
         # list of tuples (snake head, snake length) of enemy snakes
         enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), self.snake_length(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
@@ -337,17 +347,6 @@ class Game:
         return [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
 
 
-    def longest_snake(self):
-        longest_snake = self.game_data["you"]
-        for snake in self.game_data["board"]["snakes"]:
-            if self.snake_length(snake["body"]) > self.snake_length(longest_snake["body"]):
-                longest_snake = snake
-        return longest_snake['id']
-
-
-    def get_shout(self):
-        return self.shout
-
     # Return a list of nodes adjacent to the heads of enemy snakes
     def return_safety_nodes(self, longer_only):
         safety_nodes = []
@@ -365,6 +364,3 @@ class Game:
         x,y = head
         helper = lambda x,y : (x == self.danger_zone_upper or x == self.danger_zone_lower) and self.danger_zone_lower <= y <= self.danger_zone_upper
         return helper(x,y) and helper(y,x)
-
-    def empty_list(self, optional=False):
-        return []
