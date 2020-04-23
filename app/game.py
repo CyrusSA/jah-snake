@@ -11,7 +11,7 @@ class Game:
 
         # Distance from center
         center = (self.board_width/2, self.board_height/2)
-        self.astar_heuristic = lambda curr, target : sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)]) + (-100 if curr in self.kill_moves else 0)
+        self.astar_heuristic = lambda curr, target : sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)])
 
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
