@@ -111,20 +111,17 @@ class Game:
             return self.direction(self.random_destination())
 
 
-    # Mark next moves that cut off enemy snakes
+    # Return next moves that cut off enemy snakes
     def cut_off_destinations(self):
         next_moves = [node for node in self.adjacent_nodes(self.head) if node not in self.snakes]
         kill_moves = []
-        enemy_heads = [(snake['body'][0]['x'], snake['body'][0]['y']) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
+        # list of tuples (snake head, snake length) of enemy snakes
+        enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), self.snake_length(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
         for move in next_moves:
-            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, enemy_heads), [self.head, move]))
-            for head in enemy_heads:
-                for snake in self.game_data['board']['snakes']:
-                    x, y = head
-                    dict_head = {'y': y, 'x': x}
-                    if dict_head in snake['body']:
-                        if len(nx.node_connected_component(board, head)) < self.snake_length(snake['body']):
-                            kill_moves.append(move)
+            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for (head, length) in enemy_snakes]), [self.head, move]))
+            for (head, length) in enemy_snakes:
+                if len(nx.node_connected_component(board, head)) < length:
+                    kill_moves.append(move)
         return kill_moves
 
 
@@ -145,7 +142,7 @@ class Game:
                 except nx.NetworkXNoPath:
                     continue
 
-        tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head], True, False))
+        tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head], safety=True, longer_only=False))
         for food_path in paths:
             if (len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0) and food_path[-1] in tails_connectivity_board:
                 food_connected_component = nx.node_connected_component(tails_connectivity_board, food_path[-1])
