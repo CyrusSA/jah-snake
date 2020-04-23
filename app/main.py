@@ -68,7 +68,7 @@ def move():
 
     game.update_game(data)
 
-    return move_response(game.get_move(), game.get_shout())
+    return move_response(game.get_move(), game.shout)
 
 
 @bottle.post('/end')
