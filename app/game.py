@@ -89,7 +89,7 @@ class Game:
             strats_early_game = [self.food_destination, self.enemy_tail_destination, self.tail_destination, self.finesse_destination]
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
 
-            early_game = len(self.game_data['board']['snakes']) == 4 or self.game_data['turn'] < 50
+            early_game = len(self.game_data['board']['snakes']) >= 4 or self.game_data['turn'] < 50
 
             # Try strats in order with safety nodes
             for i in range(2):
