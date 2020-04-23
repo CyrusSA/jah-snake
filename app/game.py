@@ -92,25 +92,25 @@ class Game:
             if self.my_length == 1:
                 return self.direction((self.board_width/2, self.board_height/2))
 
+            strats_early_game = [self.food_destination, self.enemy_tail_destination, self.tail_destination, self.finesse_destination]
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
+
+            early_game = len(self.game_data['board']['snakes']) == 4 or self.game_data['turn'] < 50
+
             # Try strats in order with safety nodes
-            for strat in strats:
-                destination = strat()
-                if destination:
-                    self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
-                    return self.direction(destination)
+            for i in range(2):
+                for strat in (strats if early_game else strats_early_game):
+                    destination = strat()
+                    if destination:
+                        self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
+                        return self.direction(destination)
 
-            # generate boards without safety nodes
-            self.safety_nodes_all = self.safety_nodes_longer = []
-            self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
-            self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
-
-            # Try strats in order without safety nodes
-            for strat in strats:
-                destination = strat()
-                if destination:
-                    self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
-                    return self.direction(destination)
+                # generate boards without safety nodes
+                if i == 0:
+                    self.safety_nodes_all = self.safety_nodes_longer = []
+                    self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
+                    self.connectivity_board = self.update_board(
+                    self.extend_and_return(self.snakes, [self.head] + self.tails()))
 
             # Random direction (maybe safe, maybe not)
             self.shout = "Strat: Random move"
@@ -156,6 +156,8 @@ class Game:
 
         tails_connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head], safety=True, longer_only=False))
         for food_path in paths:
+            if len(self.foods) < len(self.game_data['board']['snakes']) and not self.first_to_food(food_path):
+                continue
             if (len(food_path) < len(shortest_food_path) or len(shortest_food_path) == 0) and food_path[-1] in tails_connectivity_board:
                 food_connected_component = nx.node_connected_component(tails_connectivity_board, food_path[-1])
                 for tail in self.tails():
@@ -348,11 +350,22 @@ class Game:
         x, y = node
         return [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
 
+    # Return true if we are closest to food
+    def first_to_food(self, path):
+        for snake in [snake for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]:
+            enemy_head = (snake['body'][0]['x'], snake['body'][0]['y'])
+            enemy_heads_board = self.update_board(self.remove_and_return(self.snakes, [enemy_head]))
+            try:
+                if len(nx.shortest_path(enemy_heads_board, enemy_head, path[-1])) <= len(path) and len(snake['body']) > len(self.game_data['you']['body']):
+                    return False
+            except nx.NetworkXNoPath:
+                continue
+        return True
+
 
     # Return a list of nodes adjacent to the heads of enemy snakes
     def return_safety_nodes(self, longer_only):
         safety_nodes = []
-        edge_snake = False
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
                 head = (snake['body'][0]['x'], snake["body"][0]["y"])
