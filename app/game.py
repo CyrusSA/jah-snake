@@ -15,13 +15,7 @@ class Game:
 
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
-
-
-    @staticmethod
-    def astar_heuristic_test(curr, target):
-        center = (5,5)
-        return sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)]) + (
-        -100 if curr in [(8,6)] else 0)
+        
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
