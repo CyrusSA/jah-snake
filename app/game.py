@@ -93,7 +93,7 @@ class Game:
 
             # Try strats in order with safety nodes
             for i in range(2):
-                for strat in (strats if early_game else strats_early_game):
+                for strat in (strats_early_game if early_game else strats):
                     destination = strat()
                     if destination:
                         self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
