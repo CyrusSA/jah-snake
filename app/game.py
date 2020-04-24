@@ -87,7 +87,6 @@ class Game:
                 return self.direction((self.board_width/2, self.board_height/2))
 
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
-            safe_strats = [self.tail_destination, self.enemy_tail_destination, self.food_destination, self.finesse_destination]
             # Try strats in order with safety nodes
             for strat in strats:
                 destination = strat()
@@ -101,7 +100,7 @@ class Game:
             self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
 
             # Try strats in order without safety nodes
-            for strat in safe_strats:
+            for strat in strats:
                 destination = strat()
                 if destination:
                     self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
