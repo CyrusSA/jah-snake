@@ -394,8 +394,8 @@ class Game:
 
     def is_outer_edge_point(self, node):
         x, y = node
-        helper = lambda x, y : (x==0 or x==self.board_height) and 0 <= y <= self.board_width
-        return helper(x, y) or helper(y, x)
+        helper = lambda x : x == 0 or x == self.board_height - 1
+        return helper(x) or helper(y)
 
     def update_global_boards(self):
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
