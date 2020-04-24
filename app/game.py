@@ -295,11 +295,13 @@ class Game:
         if not tail_path:
             return tail_path
         tail_destination, tail = tail_path[1], tail_path[-1]
-        if self.just_ate[id] and tail_destination and tail_destination == tail:
+        is_enemy_tail = tail != self.tail
+        if (self.just_ate[id] or is_enemy_tail) and tail_destination and tail_destination == tail:
             for path in nx.all_simple_paths(board, self.head, tail, 4):
                 if len(path) > 2:
                     return path
-            return None
+            if not is_enemy_tail:
+                return None
 
         return tail_path
 
