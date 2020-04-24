@@ -146,13 +146,18 @@ class Game:
 
     def tail_destination(self):
         my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)))
-        if self.tail in my_tail_board:
+        adjacent_to_enemy_head = [snake for snake in self.game_data['board']['snakes'] if snake['id'] != self.id and self.is_adjacent((snake['body'][0]['x'], snake['body'][0]['x']), self.tail)]
+        if self.tail in my_tail_board and not adjacent_to_enemy_head:
             try:
                 path = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)
                 return self.tail_chase_detour(my_tail_board, path, self.id)
             except nx.NetworkXNoPath:
                 pass
         return None
+
+    def is_adjacent(self, node1, node2):
+        helper = lambda x,y: abs(node1[x] - node2[x]) == 1 and node1[y] - node2[y] == 0
+        return helper(0,1) or helper(1,0)
 
 
     def enemy_tail_destination(self):
