@@ -32,6 +32,7 @@ class Game:
         self.update_snakes()
         self.safety_nodes_longer = self.return_safety_nodes(True)
         self.safety_nodes_all = self.return_safety_nodes(False)
+        self.danger_nodes = []
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()))
         self.kill_moves = self.cut_off_destinations()
@@ -91,7 +92,12 @@ class Game:
                 # Try strats in order with safety nodes
                 for strat in strats:
                     path = strat()
-                    if path and not self.narrow_path(path):
+                    self.danger_nodes = self.narrow_path_nodes(path)
+                    if self.danger_nodes:
+                        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
+                        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
+                        path = strat()
+                    if path:
                         self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
                         return self.direction(path[1])
                 # generate boards without safety nodes
@@ -109,12 +115,12 @@ class Game:
 
 
     # Gets destination of closest food item
-    def food_destination(self, force = False):
+    def food_destination(self):
         shortest_food_path = []
         paths = []
         # get shortest path to each food on no_tails_board
         for food in self.foods:
-            if self.in_danger_zone(food) and self.health > self.health_threshold and not force:
+            if self.in_danger_zone(food) and self.health > self.health_threshold:
                 continue
             if self.no_tails_board.has_node(food):
                 try:
@@ -304,7 +310,7 @@ class Game:
     # add nodes to a copy of snakes and return it
     def extend_and_return(self, snakes, extension, safety=True, longer_only=True):
         snakes_copy = snakes[:]
-        snakes_copy.extend(extension)
+        snakes_copy.extend(extension + self.danger_nodes)
         if safety:
             if longer_only:
                 snakes_copy.extend(self.safety_nodes_longer)
@@ -321,17 +327,17 @@ class Game:
         return snakes_copy
 
     # check for narrow path
-    def narrow_path(self, path):
-        danger = False
+    def narrow_path_nodes(self, path):
+        narrow_path_nodes = []
         for node in path:
             if node in self.connectivity_board:
                 adj_nodes = self.connectivity_board.__getitem__(node)
                 if len(adj_nodes) == 2:
                     for node in self.safety_nodes_all:
                         if node in adj_nodes:
-                            print "avoided danger node {}".format(node)
-                            danger = True
-        return danger
+                            print "danger_node {}".format(node)
+                            narrow_path_nodes.extend(node)
+        return narrow_path_nodes
 
 
     def calc_just_ate(self):
