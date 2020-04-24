@@ -80,6 +80,20 @@ class Game:
                 else:
                     board.add_edge(node, current_node)
 
+    # check for narrow path
+    def narrow_path(self, path):
+        print 'path {}'.format(path)
+        danger = False
+        for node in path:
+            if node in self.connectivity_board:
+                adj_nodes = self.connectivity_board.__getitem__(node)
+                if len(adj_nodes) == 2:
+                    for node in self.safety_nodes_all:
+                        if node in adj_nodes:
+                            danger = True
+        return danger
+
+
 
     def get_move(self):
         try:
@@ -91,10 +105,9 @@ class Game:
                 # Try strats in order with safety nodes
                 for strat in strats:
                     path = strat()
-                    if path:
+                    if path and not self.narrow_path(path):
                         self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
                         return self.direction(path[1])
-
                 # generate boards without safety nodes
                 self.safety_nodes_all = self.safety_nodes_longer = []
                 self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
@@ -220,7 +233,7 @@ class Game:
 
         for move in potential_moves:
             if self.is_valid_move(move) and self.connectivity_board.has_node(move) and len(nx.node_connected_component(self.connectivity_board, move)) >= candidate_index:
-                return move
+                return [self.head, move]
 
         return path
 
