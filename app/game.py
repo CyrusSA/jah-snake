@@ -32,8 +32,7 @@ class Game:
         self.update_snakes()
         self.safety_nodes_longer = self.return_safety_nodes(True)
         self.safety_nodes_all = self.return_safety_nodes(False)
-        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
-        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head]+self.tails()))
+        self.update_global_boards()
         self.kill_moves = self.cut_off_destinations()
 
 
@@ -102,8 +101,7 @@ class Game:
 
                 # generate boards without safety nodes
                 self.safety_nodes_all = self.safety_nodes_longer = []
-                self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
-                self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
+                self.update_global_boards()
 
             # Random direction (maybe safe, maybe not)
             self.shout = "Strat: Random move"
@@ -368,11 +366,11 @@ class Game:
             if snake['id'] != self.id:
                 head = (snake['body'][0]['x'], snake["body"][0]["y"])
                 is_longer = len(snake["body"]) >= len(self.game_data['you']['body'])
-                is_unsafe = ((is_longer or not longer_only) or self.is_edge_point(head))
+                is_unsafe = is_longer or not longer_only or self.is_inner_edge_point(head)
                 adjacent_nodes = self.adjacent_nodes(head)
                 safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer else [])
                 for node in adjacent_nodes:
-                    if node not in self.snakes and node not in [self.head] and is_unsafe:
+                    if node not in self.snakes and node not in [self.head] and (is_unsafe or self.is_outer_edge_point(node)):
                         safety_nodes.append(node)
         return safety_nodes
 
@@ -389,7 +387,16 @@ class Game:
         return confrontation_moves
 
 
-    def is_edge_point(self, head):
+    def is_inner_edge_point(self, head):
         x,y = head
         helper = lambda x,y : (x == self.danger_zone_upper or x == self.danger_zone_lower) and self.danger_zone_lower <= y <= self.danger_zone_upper
         return helper(x,y) or helper(y,x)
+
+    def is_outer_edge_point(self, node):
+        x, y = node
+        helper = lambda x, y : (x==0 or x==self.board_height) and 0 <= y <= self.board_width
+        return helper(x, y) or helper(y, x)
+
+    def update_global_boards(self):
+        self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
+        self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
