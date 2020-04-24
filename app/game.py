@@ -376,18 +376,15 @@ class Game:
 
 
     def confrontation_nodes(self, enemy_adj_nodes):
-        cutoff_moves = []
-        helper_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails(), False))
+        confrontation_moves = []
+        helper_board = self.update_board(self.extend_and_return(self.snakes, [self.head], False))
         possibilities = [[x,y] for x in enemy_adj_nodes for y in self.adjacent_nodes(self.head) if x != y and helper_board.has_node(x) and helper_board.has_node(y)]
-        #possibilities = zip(*([node for node in nodes if helper_board.has_node(node)] for nodes in [enemy_adj_nodes, self.adjacent_nodes(self.head)]))
         for possibility in possibilities:
-            board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()+possibility, False))
-            # if self.adjacent_nodes(possibility[0]) == self.adjacent_nodes(possibility[1]):
-            #     cutoff_moves.append(possibility[1])
+            board = self.update_board(self.extend_and_return(self.snakes, [self.head] + possibility, False))
             future_possibilities = [[node for node in nodes if board.has_node(node)] for nodes in [self.adjacent_nodes(possibility[0]), self.adjacent_nodes(possibility[1])]]
             if all(x in sorted(future_possibilities[0]) for x in sorted(future_possibilities[1])):
-                cutoff_moves.append(possibility[1])
-        return cutoff_moves
+                confrontation_moves.append(possibility[1])
+        return confrontation_moves
 
 
     def is_edge_point(self, head):
