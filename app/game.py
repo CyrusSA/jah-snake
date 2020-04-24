@@ -87,11 +87,9 @@ class Game:
                 return self.direction((self.board_width/2, self.board_height/2))
 
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
-            safe_strats = [self.tail_destination, self.enemy_tail_destination, self.food_destination, self.finesse_destination]
-
             for i in range(2):
                 # Try strats in order with safety nodes
-                for strat in (strats if i == 0 else safe_strats):
+                for strat in strats:
                     path = strat()
                     if path:
                         self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
@@ -100,8 +98,7 @@ class Game:
                 # generate boards without safety nodes
                 self.safety_nodes_all = self.safety_nodes_longer = []
                 self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
-                self.connectivity_board = self.update_board(
-                self.extend_and_return(self.snakes, [self.head] + self.tails()))
+                self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
 
             # Random direction (maybe safe, maybe not)
             self.shout = "Strat: Random move"
