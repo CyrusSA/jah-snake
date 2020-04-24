@@ -368,9 +368,9 @@ class Game:
                 is_longer = len(snake["body"]) >= len(self.game_data['you']['body'])
                 is_unsafe = ((is_longer or not longer_only) or self.is_edge_point(head))
                 adjacent_nodes = self.adjacent_nodes(head)
-                confrontation_nodes = self.confrontation_nodes(adjacent_nodes) if is_longer else []
+                safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer else [])
                 for node in adjacent_nodes:
-                    if node not in self.snakes and node not in [self.head] and (is_unsafe or node in confrontation_nodes):
+                    if node not in self.snakes and node not in [self.head] and is_unsafe:
                         safety_nodes.append(node)
         return safety_nodes
 
@@ -385,7 +385,7 @@ class Game:
             # if self.adjacent_nodes(possibility[0]) == self.adjacent_nodes(possibility[1]):
             #     cutoff_moves.append(possibility[1])
             future_possibilities = [[node for node in nodes if board.has_node(node)] for nodes in [self.adjacent_nodes(possibility[0]), self.adjacent_nodes(possibility[1])]]
-            if sorted(future_possibilities[0]) == sorted(future_possibilities[1]):
+            if all(x in sorted(future_possibilities[0]) for x in sorted(future_possibilities[1])):
                 cutoff_moves.append(possibility[1])
         return cutoff_moves
 
