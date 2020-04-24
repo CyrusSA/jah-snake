@@ -91,7 +91,7 @@ class Game:
                 # Try strats in order with safety nodes
                 for strat in strats:
                     path = strat()
-                    if path:
+                    if path and not self.narrow_path(path):
                         self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
                         return self.direction(path[1])
                 # generate boards without safety nodes
@@ -319,6 +319,19 @@ class Game:
             if node in snakes_copy:
                 snakes_copy.remove(node)
         return snakes_copy
+
+    # check for narrow path
+    def narrow_path(self, path):
+        danger = False
+        for node in path:
+            if node in self.connectivity_board:
+                adj_nodes = self.connectivity_board.__getitem__(node)
+                if len(adj_nodes) == 2:
+                    for node in self.safety_nodes_all:
+                        if node in adj_nodes:
+                            print "avoided danger node {}".format(node)
+                            danger = True
+        return danger
 
 
     def calc_just_ate(self):
