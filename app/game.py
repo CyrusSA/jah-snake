@@ -220,7 +220,7 @@ class Game:
 
         for move in potential_moves:
             if self.is_valid_move(move) and self.connectivity_board.has_node(move) and len(nx.node_connected_component(self.connectivity_board, move)) >= candidate_index:
-                return move
+                return [self.head, move]
 
         return path
 
