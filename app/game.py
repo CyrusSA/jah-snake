@@ -329,14 +329,15 @@ class Game:
     # check for narrow path
     def narrow_path_nodes(self, path):
         narrow_path_nodes = []
-        for node in path:
-            if node in self.connectivity_board:
-                adj_nodes = self.connectivity_board.__getitem__(node)
-                if len(adj_nodes) == 2:
-                    for node in self.safety_nodes_all:
-                        if node in adj_nodes:
-                            print "danger_node {}".format(node)
-                            narrow_path_nodes.extend(node)
+        if path:
+            for node in path:
+                if node in self.connectivity_board:
+                    adj_nodes = self.connectivity_board.__getitem__(node)
+                    if len(adj_nodes) == 2:
+                        for node in self.safety_nodes_all:
+                            if node in adj_nodes:
+                                print "danger_node {}".format(node)
+                                narrow_path_nodes.extend(node)
         return narrow_path_nodes
 
 
