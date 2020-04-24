@@ -366,7 +366,7 @@ class Game:
             if snake['id'] != self.id:
                 head = (snake['body'][0]['x'], snake["body"][0]["y"])
                 is_longer = len(snake["body"]) >= len(self.game_data['you']['body'])
-                is_unsafe = is_longer or not longer_only or self.is_inner_edge_point(head)
+                is_unsafe = is_longer or not longer_only
                 adjacent_nodes = self.adjacent_nodes(head)
                 safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer else [])
                 for node in adjacent_nodes:
