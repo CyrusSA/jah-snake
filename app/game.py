@@ -370,7 +370,7 @@ class Game:
                 adjacent_nodes = self.adjacent_nodes(head)
                 safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer else [])
                 for node in adjacent_nodes:
-                    if node not in self.snakes and node not in [self.head] and (is_unsafe or self.is_outer_edge_point(node)):
+                    if node not in self.snakes and node not in [self.head] and (is_unsafe or (self.is_inner_edge_point(head) and self.is_outer_edge_point(node))):
                         safety_nodes.append(node)
         return safety_nodes
 
