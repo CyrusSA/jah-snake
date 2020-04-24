@@ -92,6 +92,11 @@ class Game:
                 for strat in strats:
                     path = strat()
                     if path:
+                        cutoff_maneuver = self.cutoff_maneuver(path) if self.kill_moves else []
+                        if cutoff_maneuver:
+                            self.shout += "Strat: {}, Cutoff {}".format(strat.__name__[:-(len('_destination'))],
+                                                                        cutoff_maneuver[1:-1])
+                            return self.direction(cutoff_maneuver[1])
                         self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
                         return self.direction(path[1])
 
@@ -258,13 +263,31 @@ class Game:
         next_moves = [node for node in self.adjacent_nodes(self.head) if node not in self.snakes and node in self.connectivity_board]
         kill_moves = []
         # list of tuples (snake head, snake length) of enemy snakes
-        enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), self.snake_length(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
+        enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), len(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
         for move in next_moves:
-            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head, move]))
+            current_board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head]))
+            cutoff_board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head, move]))
             for head, length in enemy_snakes:
-                if len(nx.node_connected_component(board, head)) < length:
+                if len(nx.node_connected_component(current_board, head)) < length:
+                    # snake already cutoff
+                    continue
+                if len(nx.node_connected_component(cutoff_board, head)) < length:
                     kill_moves.append(move)
         return kill_moves
+
+
+    def cutoff_maneuver(self, path):
+        adjacent_nodes = [self.adjacent_nodes(node) for node in path]
+        for i in range(len(adjacent_nodes)):
+            for node in adjacent_nodes[i]:
+                if node not in path and node in self.kill_moves and self.no_tails_board.has_node(node) and self.no_tails_board.has_node(path[i+1]):
+                    try:
+                        for maneuver in nx.all_simple_paths(self.no_tails_board, path[i], path[i+1], 6):
+                            if node in maneuver:
+                                return maneuver
+                    except nx.NetworkXNoPath:
+                        continue
+        return None
 
 
     # Dont follow closely if target snake just ate
@@ -339,15 +362,30 @@ class Game:
     # Return a list of nodes adjacent to the heads of enemy snakes
     def return_safety_nodes(self, longer_only):
         safety_nodes = []
-        edge_snake = False
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
                 head = (snake['body'][0]['x'], snake["body"][0]["y"])
-                edge_snake = self.is_edge_point(head)
-                for node in self.adjacent_nodes(head):
-                    if node not in self.snakes and node not in [self.head] and ((len(snake["body"]) >= self.my_length or not longer_only) or edge_snake):
+                is_longer = len(snake["body"]) >= len(self.game_data['you']['body'])
+                is_unsafe = ((is_longer or not longer_only) or self.is_edge_point(head))
+                adjacent_nodes = self.adjacent_nodes(head)
+                safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer else [])
+                for node in adjacent_nodes:
+                    if node not in self.snakes and node not in [self.head] and is_unsafe:
                         safety_nodes.append(node)
         return safety_nodes
+
+
+    def confrontation_nodes(self, enemy_adj_nodes):
+        confrontation_moves = []
+        helper_board = self.update_board(self.extend_and_return(self.snakes, [self.head], False))
+        possibilities = [[x,y] for x in enemy_adj_nodes for y in self.adjacent_nodes(self.head) if x != y and helper_board.has_node(x) and helper_board.has_node(y)]
+        for possibility in possibilities:
+            board = self.update_board(self.extend_and_return(self.snakes, [self.head] + possibility, False))
+            future_possibilities = [[node for node in nodes if board.has_node(node)] for nodes in [self.adjacent_nodes(possibility[0]), self.adjacent_nodes(possibility[1])]]
+            if all(x in sorted(future_possibilities[0]) for x in sorted(future_possibilities[1])):
+                confrontation_moves.append(possibility[1])
+        return confrontation_moves
+
 
     def is_edge_point(self, head):
         x,y = head
