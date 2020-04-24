@@ -94,6 +94,9 @@ class Game:
                     self.danger_nodes = self.narrow_path_nodes(path)
                     if self.danger_nodes:
                         self.update_global_boards()
+                        for node in self.danger_nodes:
+                            if node in self.no_tails_board:
+                                print "WHY"
                         path = strat()
                     if path:
                         self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
@@ -329,12 +332,10 @@ class Game:
         if path:
             for node in path:
                 if node in self.connectivity_board:
-                    adj_nodes = self.connectivity_board.__getitem__(node)
-                    if len(adj_nodes) <= 2:
-                        for safety_node in self.safety_nodes_all:
-                            if safety_node in adj_nodes or safety_node == node:
-                                print "danger_node {}".format(safety_node)
-                                narrow_path_nodes.extend(safety_node)
+                    adj_nodes = self.no_tails_board.__getitem__(node)
+                    if len(adj_nodes) <= 2 and node not in self.safety_nodes_all:
+                        print "danger_node {}".format(node)
+                        narrow_path_nodes.append(node)
         return narrow_path_nodes
 
 
