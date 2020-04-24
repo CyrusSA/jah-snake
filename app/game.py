@@ -11,17 +11,11 @@ class Game:
 
         # Distance from center
         center = (self.board_width/2, self.board_height/2)
-        self.astar_heuristic = lambda curr, target : sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)]) + (-100 if curr in self.kill_moves else 0)
+        self.astar_heuristic = lambda curr, target : sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)])
 
         self.danger_zone_lower = 1
         self.danger_zone_upper = 9
-
-
-    @staticmethod
-    def astar_heuristic_test(curr, target):
-        center = (5,5)
-        return sum([(node[0] - center[0]) ** 2 + (node[1] - center[1]) ** 2 for node in (curr, target)]) + (
-        -100 if curr in [(8,6)] else 0)
+        
 
     # Updates game state with data from /move request.
     def update_game(self, game_data):
@@ -93,24 +87,17 @@ class Game:
                 return self.direction((self.board_width/2, self.board_height/2))
 
             strats = [self.food_destination, self.tail_destination, self.enemy_tail_destination, self.finesse_destination]
-            # Try strats in order with safety nodes
-            for strat in strats:
-                destination = strat()
-                if destination:
-                    self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
-                    return self.direction(destination)
-
-            # generate boards without safety nodes
-            self.safety_nodes_all = self.safety_nodes_longer = []
-            self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
-            self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
-
-            # Try strats in order without safety nodes
-            for strat in strats:
-                destination = strat()
-                if destination:
-                    self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
-                    return self.direction(destination)
+            for i in range(2):
+                # Try strats in order with safety nodes
+                for strat in strats:
+                    path = strat()
+                    if path:
+                        self.shout += "Strat: {}".format(strat.__name__[:-(len('_destination'))])
+                        return self.direction(path[1])
+                # generate boards without safety nodes
+                self.safety_nodes_all = self.safety_nodes_longer = []
+                self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
+                self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
 
             # Random direction (maybe safe, maybe not)
             self.shout = "Strat: Random move"
@@ -119,20 +106,6 @@ class Game:
             self.shout = 'Unknown Error: {}'.format(e)
             print traceback.format_exc()
             return self.direction(self.random_destination())
-
-
-    # Return next moves that cut off enemy snakes
-    def cut_off_destinations(self):
-        next_moves = [node for node in self.adjacent_nodes(self.head) if node not in self.snakes and node in self.connectivity_board]
-        kill_moves = []
-        # list of tuples (snake head, snake length) of enemy snakes
-        enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), self.snake_length(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
-        for move in next_moves:
-            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for (head, length) in enemy_snakes]), [self.head, move]))
-            for (head, length) in enemy_snakes:
-                if len(nx.node_connected_component(board, head)) < length:
-                    kill_moves.append(move)
-        return kill_moves
 
 
     # Gets destination of closest food item
@@ -162,27 +135,15 @@ class Game:
 
         if shortest_food_path:
             self.shout += 'food at {} '.format(shortest_food_path[-1])
-            return shortest_food_path[1]
-        else:
-            return None
-
-
-    # True if food in corners and adjacent to corners except on the diagonal
-    def in_danger_zone(self, food):
-        limits = [self.danger_zone_lower, self.danger_zone_upper]
-        return food not in [(i,j) for i in limits for j in limits] and (
-                (food[0] <= self.danger_zone_lower and food[1] <= self.danger_zone_lower)
-                or (food[0] <= self.danger_zone_lower and food[1] >= self.danger_zone_upper)
-                or (food[0] >= self.danger_zone_upper and food[1] <= self.danger_zone_lower)
-                or (food[0] >= self.danger_zone_upper and food[1] >= self.danger_zone_upper))
+        return shortest_food_path
 
 
     def tail_destination(self):
         my_tail_board = self.update_board(self.extend_and_return(self.snakes, self.tails(True)))
         if self.tail in my_tail_board:
             try:
-                tail_destination = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)[1]
-                return self.tail_chase_detour(my_tail_board, tail_destination, self.tail, self.id)
+                path = nx.astar_path(my_tail_board, self.head, self.tail, self.astar_heuristic)
+                return self.tail_chase_detour(my_tail_board, path, self.id)
             except nx.NetworkXNoPath:
                 pass
         return None
@@ -209,7 +170,7 @@ class Game:
         if not shortest_path:
             return None
         enemy_id = [snake for snake in self.game_data['board']['snakes'] if snake['body'][-1]['x'] == shortest_path[-1][0] and snake['body'][-1]['y'] == shortest_path[-1][1]][0]['id']
-        return self.tail_chase_detour(enemy_tails_board, shortest_path[1], shortest_path[-1], enemy_id)
+        return self.tail_chase_detour(enemy_tails_board, shortest_path, enemy_id)
 
 
     def finesse_destination(self):
@@ -225,7 +186,7 @@ class Game:
                         continue
                     if len(path) - 1 < candidate_index:
                         return self.kill_time_destination(component, path, candidate_index)
-                    return path[1]
+                    return path
                 except nx.NetworkXNoPath:
                     continue
         return None
@@ -258,9 +219,9 @@ class Game:
 
         for move in potential_moves:
             if self.is_valid_move(move) and self.connectivity_board.has_node(move) and len(nx.node_connected_component(self.connectivity_board, move)) >= candidate_index:
-                return move
+                return [self.head, move]
 
-        return path[1]
+        return path
 
 
     # get a random step into free space
@@ -279,17 +240,44 @@ class Game:
         )
 
 
+    # True if food in corners and adjacent to corners except on the diagonal
+    def in_danger_zone(self, food):
+        limits = [self.danger_zone_lower, self.danger_zone_upper]
+        return food not in [(i,j) for i in limits for j in limits] and (
+                (food[0] <= self.danger_zone_lower and food[1] <= self.danger_zone_lower)
+                or (food[0] <= self.danger_zone_lower and food[1] >= self.danger_zone_upper)
+                or (food[0] >= self.danger_zone_upper and food[1] <= self.danger_zone_lower)
+                or (food[0] >= self.danger_zone_upper and food[1] >= self.danger_zone_upper))
+
+
+    # Return next moves that cut off enemy snakes
+    def cut_off_destinations(self):
+        if self.my_length==1:
+            return []
+        next_moves = [node for node in self.adjacent_nodes(self.head) if node not in self.snakes and node in self.connectivity_board]
+        kill_moves = []
+        # list of tuples (snake head, snake length) of enemy snakes
+        enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), self.snake_length(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
+        for move in next_moves:
+            board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head, move]))
+            for head, length in enemy_snakes:
+                if len(nx.node_connected_component(board, head)) < length:
+                    kill_moves.append(move)
+        return kill_moves
+
+
     # Dont follow closely if target snake just ate
-    def tail_chase_detour(self, board, tail_destination, tail, id):
+    def tail_chase_detour(self, board, tail_path, id):
+        if not tail_path:
+            return tail_path
+        tail_destination, tail = tail_path[1], tail_path[-1]
         if self.just_ate[id] and tail_destination and tail_destination == tail:
             for path in nx.all_simple_paths(board, self.head, tail, 4):
                 if len(path) > 2:
-                    tail_destination = path[1]
-                    break
-            if tail_destination == tail:
-                return None
+                    return path
+            return None
 
-        return tail_destination
+        return tail_path
 
 
     def tails(self, enemy_only=False):
@@ -363,4 +351,5 @@ class Game:
     def is_edge_point(self, head):
         x,y = head
         helper = lambda x,y : (x == self.danger_zone_upper or x == self.danger_zone_lower) and self.danger_zone_lower <= y <= self.danger_zone_upper
-        return helper(x,y) and helper(y,x)
+        return helper(x,y) or helper(y,x)
+
