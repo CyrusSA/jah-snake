@@ -359,4 +359,4 @@ class Game:
     def is_edge_point(self, head):
         x,y = head
         helper = lambda x,y : (x == self.danger_zone_upper or x == self.danger_zone_lower) and self.danger_zone_lower <= y <= self.danger_zone_upper
-        return helper(x,y) and helper(y,x)
+        return helper(x,y) or helper(y,x)
