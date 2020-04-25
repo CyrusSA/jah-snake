@@ -375,8 +375,7 @@ class Game:
 
                 if is_longer:
                     helper_board = self.update_board(self.extend_and_return(self.snakes, [self.head], False))
-                    possibilities = [[x, y] for x in adjacent_nodes for y in self.adjacent_nodes(self.head) if
-                                     x != y and helper_board.has_node(x) and helper_board.has_node(y)]
+                    possibilities = [[x, y] for x in adjacent_nodes for y in [node for node in self.adjacent_nodes(self.head) if not (node == self.tail and self.my_length==2)] if x != y and helper_board.has_node(x) and helper_board.has_node(y)]
 
                     for possibility in possibilities:
                         board = self.update_board(self.extend_and_return(self.snakes, [self.head] + possibility, False))
