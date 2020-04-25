@@ -28,6 +28,7 @@ class Game:
         self.health = self.game_data["you"]["health"]
         self.shout = ""
         self.calc_just_ate()
+        self.set_health_thresh()
         self.foods = [(food["x"], food["y"]) for food in self.game_data["board"]["food"]]
         self.update_snakes()
         self.safety_nodes_longer = self.return_safety_nodes(True)
@@ -114,12 +115,12 @@ class Game:
 
 
     # Gets destination of closest food item
-    def food_destination(self, force = False):
+    def food_destination(self):
         shortest_food_path = []
         paths = []
         # get shortest path to each food on no_tails_board
         for food in self.foods:
-            if self.in_danger_zone(food) and self.health > self.health_threshold and not force:
+            if self.in_danger_zone(food) and self.health > self.health_threshold:
                 continue
             if self.no_tails_board.has_node(food):
                 try:
@@ -428,3 +429,10 @@ class Game:
     def update_global_boards(self):
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
+
+    def set_health_thresh(self):
+        self.health_threshold = 60
+        my_len = len(self.game_data['you']['body'])
+        for snake in self.game_data['board']['snakes']:
+            if snake['id'] != self.id and len(snake['body']) < my_len + 1:
+                self.health_threshold = 101
