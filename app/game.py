@@ -240,9 +240,19 @@ class Game:
 
 
     def is_valid_move(self, move):
-        return 0 <= move[0] < self.board_width and 0<= move[1] < self.board_height and (
-            {'x': move[0], 'y': move[1]} not in [body for bodies in [snake['body'] for snake in self.game_data['board']['snakes']] for body in bodies]
-        )
+        if not (0 <= move[0] < self.board_width and 0<= move[1] < self.board_height):
+            return False
+
+        for snake in self.game_data['board']['snakes']:
+            tail_pos = -1
+            if self.just_ate[snake['id']]:
+                if move == (snake['body'][-1]['x'], snake['body'][-1]['y']):
+                    return False
+                tail_pos = -2
+            if  {'x': move[0], 'y': move[1]} in [body for bodies in [snake['body'][(0 if len(snake['body']) >= len(self.game_data['you']['body']) else 1):tail_pos] for snake in self.game_data['board']['snakes']] for body in bodies]:
+                return False
+
+        return True
 
 
     # True if food in corners and adjacent to corners except on the diagonal
