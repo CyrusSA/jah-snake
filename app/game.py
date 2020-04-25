@@ -101,7 +101,7 @@ class Game:
                         return self.direction(path[1])
 
                 # generate boards without safety nodes
-                self.safety_nodes_all = self.safety_nodes_longer = []
+                self.safety_nodes_all = self.safety_nodes_longer = self.return_safety_nodes(True, desperate=True)
                 self.update_global_boards()
 
             # Random direction (maybe safe, maybe not)
@@ -361,7 +361,7 @@ class Game:
 
 
     # Return a list of nodes adjacent to the heads of enemy snakes
-    def return_safety_nodes(self, longer_only):
+    def return_safety_nodes(self, longer_only, desperate=False):
         safety_nodes = []
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
@@ -369,9 +369,9 @@ class Game:
                 is_longer = len(snake["body"]) >= len(self.game_data['you']['body'])
                 is_unsafe = is_longer or not longer_only
                 adjacent_nodes = self.adjacent_nodes(head)
-                safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer else [])
+                safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer and not desperate else [])
                 for node in adjacent_nodes:
-                    if node not in self.snakes and node not in [self.head] and (is_unsafe or (self.is_inner_edge_point(head) and self.is_outer_edge_point(node))):
+                    if node not in self.snakes and node not in [self.head] and (is_unsafe or (self.is_inner_edge_point(head) and self.is_outer_edge_point(node) and not desperate)):
                         safety_nodes.append(node)
         return safety_nodes
 
