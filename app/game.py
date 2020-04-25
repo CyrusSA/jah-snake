@@ -363,16 +363,34 @@ class Game:
     # Return a list of nodes adjacent to the heads of enemy snakes
     def return_safety_nodes(self, longer_only, desperate=False):
         safety_nodes = []
+        all_possibilities = {}
+        for node in [node for node in self.adjacent_nodes(self.head) if self.is_valid_move(node)]:
+            all_possibilities[node] = [[],[]]
         for snake in self.game_data['board']['snakes']:
             if snake['id'] != self.id:
                 head = (snake['body'][0]['x'], snake["body"][0]["y"])
                 is_longer = len(snake["body"]) >= len(self.game_data['you']['body'])
                 is_unsafe = is_longer or not longer_only
                 adjacent_nodes = self.adjacent_nodes(head)
-                safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer and not desperate else [])
+
+                if is_longer:
+                    helper_board = self.update_board(self.extend_and_return(self.snakes, [self.head], False))
+                    possibilities = [[x, y] for x in adjacent_nodes for y in self.adjacent_nodes(self.head) if
+                                     x != y and helper_board.has_node(x) and helper_board.has_node(y)]
+
+                    for possibility in possibilities:
+                        board = self.update_board(self.extend_and_return(self.snakes, [self.head] + possibility, False))
+                        next_move_set = [[node for node in nodes if board.has_node(node)] for nodes in [self.adjacent_nodes(possibility[0]), self.adjacent_nodes(possibility[1])]]
+                        all_possibilities[possibility[1]][0].extend(next_move_set[0])
+                        all_possibilities[possibility[1]][1] = next_move_set[1]
+
+                #safety_nodes.extend(self.confrontation_nodes(adjacent_nodes) if is_longer and not desperate else [])
                 for node in adjacent_nodes:
-                    if node not in self.snakes and node not in [self.head] and (is_unsafe or (self.is_inner_edge_point(head) and self.is_outer_edge_point(node) and not desperate)):
+                    if self.is_valid_move(node) and node not in self.snakes and node not in [self.head] and (is_unsafe or (self.is_inner_edge_point(head) and self.is_outer_edge_point(node) and not desperate)):
                         safety_nodes.append(node)
+        for node in self.adjacent_nodes(self.head):
+            if node not in safety_nodes and all_possibilities.has_key(node) and all_possibilities[node][0] and all(x in all_possibilities[node][0] for x in all_possibilities[node][1]):
+                safety_nodes.append(node)
         return safety_nodes
 
 
