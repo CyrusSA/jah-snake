@@ -43,7 +43,7 @@ def start():
     """
     global game
     game = Game(data)
-    color = "#A1A1A1"
+    color = "#193cff"
     headType = "dead"
     tailType = "hook"
 
