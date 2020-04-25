@@ -34,7 +34,6 @@ class Game:
         self.safety_nodes_all = self.return_safety_nodes(False)
         self.update_global_boards()
         self.kill_moves = self.cut_off_destinations()
-        self.health_threshold = self.get_health_threshold()
 
 
     # Populate self.snakes with snake data, no tails.
@@ -402,10 +401,3 @@ class Game:
     def update_global_boards(self):
         self.no_tails_board = self.update_board(self.extend_and_return(self.snakes, self.tails()))
         self.connectivity_board = self.update_board(self.extend_and_return(self.snakes, [self.head] + self.tails()))
-
-    def get_health_threshold(self):
-        my_len = len(self.game_data['you']['body'])
-        for snake in self.game_data['board']['snakes']:
-            if snake['id'] != self.id and len(snake['body']) > my_len:
-                return 150
-        return 60
