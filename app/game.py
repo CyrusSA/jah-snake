@@ -398,7 +398,7 @@ class Game:
                     if self.is_valid_move(node) and node not in self.snakes and node not in [self.head] and (is_unsafe or (self.is_inner_edge_point(head) and self.is_outer_edge_point(node) and not desperate)):
                         safety_nodes.append(node)
         for node in self.adjacent_nodes(self.head):
-            if node not in safety_nodes and all_possibilities.has_key(node) and all_possibilities[node][0] and all(x in all_possibilities[node][0] for x in all_possibilities[node][1]):
+            if not desperate and node not in safety_nodes and all_possibilities.has_key(node) and all_possibilities[node][0] and all(x in all_possibilities[node][0] for x in all_possibilities[node][1]):
                 safety_nodes.append(node)
         return safety_nodes
 
