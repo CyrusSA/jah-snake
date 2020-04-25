@@ -115,12 +115,12 @@ class Game:
 
 
     # Gets destination of closest food item
-    def food_destination(self, force = False):
+    def food_destination(self):
         shortest_food_path = []
         paths = []
         # get shortest path to each food on no_tails_board
         for food in self.foods:
-            if self.in_danger_zone(food) and self.health > self.health_threshold and not force:
+            if self.in_danger_zone(food) and self.health > self.health_threshold:
                 continue
             if self.no_tails_board.has_node(food):
                 try:
@@ -407,5 +407,5 @@ class Game:
         self.health_threshold = 60
         my_len = len(self.game_data['you']['body'])
         for snake in self.game_data['board']['snakes']:
-            if snake['id'] != self.id and my_len < len(snake['body']):
+            if snake['id'] != self.id and len(snake['body']) < my_len + 1:
                 self.health_threshold = 101
