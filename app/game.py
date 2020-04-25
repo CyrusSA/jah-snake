@@ -264,8 +264,8 @@ class Game:
         # list of tuples (snake head, snake length) of enemy snakes
         enemy_snakes = [((snake['body'][0]['x'], snake['body'][0]['y']), len(snake['body'])) for snake in self.game_data['board']['snakes'] if snake['id'] != self.id]
         for move in next_moves:
-            current_board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head]))
-            cutoff_board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head, move]))
+            current_board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head], safety=False))
+            cutoff_board = self.update_board(self.extend_and_return(self.remove_and_return(self.snakes, [head for head, length in enemy_snakes]), [self.head, move], safety=False))
             for head, length in enemy_snakes:
                 if len(nx.node_connected_component(current_board, head)) < length:
                     # snake already cutoff
